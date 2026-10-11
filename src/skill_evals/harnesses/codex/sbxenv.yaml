@@ -1,0 +1,16 @@
+# Harness layer: Codex
+#
+# Merged on top of harnesses/base.sbxenv.yaml.
+schemaVersion: "1"
+
+# Built-in sbx agent: image docker/sandbox-templates:codex. The sandbox already
+# configures ~/.codex/config.toml with approval_policy = "never" and
+# sandbox_mode = "danger-full-access". Auth comes from the sbx secret store
+# and is injected by the host proxy, so the credential never enters the sandbox.
+agent: codex
+
+# Kits are applied inside the sandbox when it is created, in this order.
+# Relative paths resolve against this file's directory.
+kits:
+  - ./cli  # Pin the Codex CLI version (runs INSIDE the sandbox)
+  - ./tracing  # MLflow tracing for Codex (runs INSIDE the sandbox)

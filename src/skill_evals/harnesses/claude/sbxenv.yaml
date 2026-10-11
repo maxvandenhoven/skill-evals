@@ -1,0 +1,16 @@
+# Harness layer: Claude Code
+#
+# Merged on top of harnesses/base.sbxenv.yaml. Picks the agent and adds the kit
+# that makes Claude Code send traces to MLflow.
+schemaVersion: "1"
+
+# Built-in sbx agent: image docker/sandbox-templates:claude-code, user `agent`,
+# permissions pre-set to bypass mode. Auth comes from the sbx secret store
+# and is injected by the host proxy, so the credential never enters the sandbox.
+agent: claude
+
+# Kits are applied inside the sandbox when it is created, in this order.
+# Relative paths resolve against this file's directory.
+kits:
+  - ./cli  # Pin the Claude Code CLI version (runs INSIDE the sandbox)
+  - ./tracing  # MLflow tracing for Claude Code (runs INSIDE the sandbox)

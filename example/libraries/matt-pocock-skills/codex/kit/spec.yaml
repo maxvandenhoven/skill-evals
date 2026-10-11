@@ -1,0 +1,23 @@
+# Kit: install matt-pocock-skills into Codex, exactly as its README prescribes
+#
+# Source: https://github.com/mattpocock/skills (README, "Codex"):
+#     codex plugin marketplace add mattpocock/skills
+#     codex plugin add mattpocock-skills@mattpocock
+# This installs from the repo's own marketplace, i.e. the latest release.
+schemaVersion: "2"
+kind: mixin
+name: matt-pocock-skills-codex
+description: Matt Pocock's skills via the repo's Codex plugin marketplace.
+
+permissions:
+  network:
+    allow:
+      - github.com
+      - codeload.github.com
+
+setup:
+  install:
+    - command: >-
+        codex plugin marketplace add mattpocock/skills &&
+        codex plugin add mattpocock-skills@mattpocock
+      user: "1000"

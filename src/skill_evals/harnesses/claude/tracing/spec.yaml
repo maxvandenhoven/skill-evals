@@ -1,0 +1,28 @@
+# Kit: MLflow tracing for Claude Code (runs INSIDE the sandbox)
+#
+# Tracing uses MLflow's official Claude Code plugin. It hooks into Claude Code
+# and uploads a trace when a session ends. It reads MLFLOW_TRACKING_URI and
+# MLFLOW_EXPERIMENT_ID from the environment (set in harnesses/base.sbxenv.yaml)
+# plus the switch below.
+schemaVersion: "2"
+kind: mixin
+name: claude-mlflow-tracing
+description: Send Claude Code sessions to an MLflow tracking server.
+
+environment:
+  variables:
+    MLFLOW_CLAUDE_TRACING_ENABLED: "true"
+
+permissions:
+  network:
+    allow:
+      - localhost:5000  # Host MLflow, reached as host.docker.internal:5000
+      - github.com
+      - codeload.github.com
+
+setup:
+  install:
+    - command: >-
+        claude plugin marketplace add mlflow/mlflow --sparse .claude-plugin &&
+        claude plugin install mlflow-tracing@mlflow-plugins
+      user: "1000"  # Agent user

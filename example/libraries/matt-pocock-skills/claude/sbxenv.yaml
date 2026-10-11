@@ -1,0 +1,9 @@
+# Library layer: matt-pocock-skills for Claude Code
+#
+# Merged last, on top of base + harnesses/claude. It only adds a kit; `kits`
+# lists concatenate across layers, so the tracing kit stays.
+# A run without this layer is the "none" (baseline) library.
+schemaVersion: "1"
+agent: claude
+kits:
+  - ./kit

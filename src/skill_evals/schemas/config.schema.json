@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config.schema.json",
+  "title": "skill-evals project (.skill-evals.yaml)",
+  "description": "Where a project keeps its evals, harnesses, libraries and fixtures. Paths are relative to this file. Create one with `skill-evals init`.",
+  "type": "object",
+  "required": [
+    "evals",
+    "harnesses",
+    "libraries",
+    "fixtures"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "evals": {
+      "type": "string",
+      "description": "Folder of eval files (<name>.yaml)."
+    },
+    "harnesses": {
+      "type": "string",
+      "description": "Folder of harnesses (<name>/ with sbxenv.yaml and harness.yaml) and the shared base.sbxenv.yaml."
+    },
+    "libraries": {
+      "type": "string",
+      "description": "Folder of skill libraries (<name>/<harness>/sbxenv.yaml)."
+    },
+    "fixtures": {
+      "type": "string",
+      "description": "Folder of fixture kits (<name>/spec.yaml)."
+    },
+    "scorers": {
+      "type": "string",
+      "description": "Optional Python package with extra scorers: its __init__.py defines REGISTRY, a dict of name to scorer factory."
+    },
+    "runs": {
+      "type": "string",
+      "description": "Where run folders and reports go (default .skill-evals/runs)."
+    },
+    "mlflow": {
+      "type": "string",
+      "description": "Where the managed MLflow server keeps its database and artifacts (default .skill-evals/mlflow)."
+    }
+  }
+}

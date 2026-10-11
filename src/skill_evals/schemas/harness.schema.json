@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "harness.schema.json",
+  "title": "Harness run settings (harnesses/<name>/harness.yaml)",
+  "description": "How the runner drives one agent inside its sandbox. Lives next to the harness's sbxenv.yaml, which can't hold these keys (sbx rejects unknown keys).",
+  "type": "object",
+  "required": [
+    "run",
+    "inventory",
+    "trace_reader"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "run": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "contains": {
+        "type": "string",
+        "pattern": "\\{prompt\\}"
+      },
+      "description": "Command for one non-interactive eval turn, as argv (no shell), run via `sbx env exec` in the workspace. \"{prompt}\" is replaced by the eval's prompt as one argument."
+    },
+    "inventory": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Command whose output records what is installed (CLI version, plugins); saved to inventory.txt and the trace tag eval.inventory."
+    },
+    "settle_seconds": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5,
+      "description": "Seconds to wait after the turn before looking for the trace, so the tracing hook has finished uploading."
+    },
+    "trace_reader": {
+      "enum": [
+        "claude",
+        "codex"
+      ],
+      "description": "Which trace reader in skill_evals.traces understands this harness's traces (READERS). Harnesses for the same agent share one."
+    }
+  }
+}

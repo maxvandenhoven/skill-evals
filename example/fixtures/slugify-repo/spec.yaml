@@ -1,0 +1,65 @@
+# Fixture kit: a tiny Python repo with a feature branch, for PR / review evals
+#
+# A fixture sets up the workspace that the agent starts in, inside the sandbox while it
+# is created. This one creates a code repository with a git history to inspect:
+#
+#   main                    Add slugify        (+ spec and standards with with_spec)
+#   feature/unicode-slugs   Transliterate accents and cap slug length   <- HEAD
+#
+# The files of each commit are real files in this kit, under files/home/, which sbx
+# copies to /home/agent/ before setup.install runs:
+#
+#   .fixtures/slugify-repo/main/      slugify.py, test_slugify.py as on main
+#   .fixtures/slugify-repo/spec/      docs/unicode-slugs.md, CONTRIBUTING.md (optional)
+#   .fixtures/slugify-repo/feature/   slugify.py, test_slugify.py after the change
+#
+# Then setup.install copies them into the workspace ($WORKSPACE_DIR) and commits. (Files
+# in files/workspace/ would arrive only after setup.install, too late to commit; use it
+# for files that should stay uncommitted.)
+#
+# The feature commit deliberately contains review material:
+#   - the spec asks for word-boundary truncation, which the code doesn't do (a "Spec"
+#     finding);
+#   - CONTRIBUTING.md asks for docstrings, which the code lacks (a "Standards" finding).
+#
+# An eval case selects it with `fixture: slugify-repo`, or with arguments:
+#   fixture: { name: slugify-repo, args: { with_spec: true } }
+schemaVersion: "2"
+kind: mixin
+name: fixture-slugify-repo
+description: A Python repo with a feature branch to review or describe.
+
+args:
+  with_spec:
+    description: >-
+      "true" adds a spec (docs/unicode-slugs.md) and standards (CONTRIBUTING.md) to
+      main, so a review has both axes to check.
+    default: "false"
+
+# The commands only run git locally, so the kit needs no network access. A fixture that
+# installs packages lists the hosts it needs, so a sandbox under a restrictive network
+# policy opens exactly those:
+#
+#   permissions:
+#     network:
+#       allow: [pypi.org, files.pythonhosted.org]
+
+# Every command runs as the agent user (so the agent owns the repo) in its own shell,
+# hence the `cd` in each.
+setup:
+  install:
+    - command: >-
+        cd "$WORKSPACE_DIR" && git init -q -b main &&
+        git config user.name "Fixture" && git config user.email "fixture@example.com"
+      user: "1000"
+    - command: >-
+        cd "$WORKSPACE_DIR" && cp -r /home/agent/.fixtures/slugify-repo/main/. . &&
+        if [ "${{ kit.args.with_spec }}" = "true" ]; then
+        cp -r /home/agent/.fixtures/slugify-repo/spec/. .; fi &&
+        git add -A && git commit -qm "Add slugify"
+      user: "1000"
+    - command: >-
+        cd "$WORKSPACE_DIR" && git checkout -qb feature/unicode-slugs &&
+        cp -r /home/agent/.fixtures/slugify-repo/feature/. . &&
+        git commit -qam "Transliterate accents and cap slug length"
+      user: "1000"

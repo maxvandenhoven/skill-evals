@@ -1,0 +1,21 @@
+# YAML lint rules for every *.yaml in the project. Run with `make lint`.
+extends: default
+
+ignore: |
+  .venv/
+  .runs/
+  .mlflow/
+
+rules:
+  line-length:
+    max: 90  # Same as ruff (pyproject.toml)
+    allow-non-breakable-inline-mappings: true  # Long regexes and URLs as one value
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 2  # `key: value  # Comment`
+  braces:
+    min-spaces-inside: 1  # `{ skill: pr }`
+    max-spaces-inside: 1
+  document-start: disable  # sbx files don't start with `---`
+  truthy:
+    check-keys: false

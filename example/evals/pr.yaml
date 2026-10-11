@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../src/skill_evals/schemas/eval.schema.json
+# Eval: write a PR body
+#
+# Does the agent use the library's `pr` skill when asked to write a PR body,
+# and does its answer follow the template that skill prescribes?
+# The prompt deliberately does NOT mention the skill: whether the agent picks
+# it up by itself (from the skill's description) is part of what's measured.
+
+description: >-
+  Write a PR body for a feature branch; expects matt-pocock-skills' `pr` template.
+
+# Skill libraries (folders in libraries/) to test, one sandbox per library and
+# harness. The baseline without a library runs too; `baseline: false` skips it.
+libraries: [matt-pocock-skills]
+
+# The cases: one non-interactive prompt each, run in a fresh workspace. Besides `id`
+# and `prompt`, a case can set (or inherit from the top level of this file):
+#   fixture: the kit in the project's fixtures folder that builds the workspace
+#   scorers: MLflow scorers that grade the case's traces
+cases:
+  - id: feature-branch
+    prompt: >-
+      Write the PR body for the changes on this branch compared to main.
+      Reply with only the PR body in markdown.
+    fixture: slugify-repo
+    scorers:
+      # Did the agent load the skill? Claude: the Skill tool; Codex: reading SKILL.md.
+      - name: skill_invoked
+        args: { skill: pr }
+      # Does the final answer follow the `pr` template?
+      # Summary + Evidence + Merge Danger sections, a one-/two-way Door,
+      # and a Blast Radius.
+      - name: answer_matches
+        args:
+          # yamllint disable-line rule:line-length
+          pattern: '(?ms)(?=.*^## Summary)(?=.*^## Evidence)(?=.*^## Merge Danger)(?=.*\*\*Door:\*\*\s*(?i:one|two)-way)(?=.*\*\*Blast Radius:\*\*)'

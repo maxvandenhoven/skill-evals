@@ -1,0 +1,7 @@
+# Library layer: matt-pocock-skills for Codex
+#
+# Merged last, on top of base + harnesses/codex. See ../claude/sbxenv.yaml.
+schemaVersion: "1"
+agent: codex
+kits:
+  - ./kit

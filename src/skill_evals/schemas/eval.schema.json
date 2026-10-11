@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eval.schema.json",
+  "title": "Skill eval (evals/<name>.yaml)",
+  "description": "One eval: the libraries to test and one or more cases (prompt, fixture, scorers). The eval's name is its file name. Top-level fixture and scorers are defaults that a case inherits unless it sets its own; every case must end up with scorers.",
+  "type": "object",
+  "required": [
+    "libraries",
+    "cases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "One line on what is measured; printed above the eval's scores."
+    },
+    "libraries": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._-]+$",
+        "not": {
+          "const": "none"
+        }
+      },
+      "description": "Skill libraries (folders in libraries/) to install, one cell per library. The baseline without a library (\"none\") runs too, unless `baseline` is false; an empty list runs only the baseline."
+    },
+    "baseline": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to also run every case without a library (the \"none\" cell), for comparison. Set it to false to only run the libraries."
+    },
+    "fixture": {
+      "$ref": "#/$defs/fixture",
+      "description": "Default fixture for cases without their own."
+    },
+    "scorers": {
+      "$ref": "#/$defs/scorers"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/case"
+      },
+      "description": "The prompts to test; each runs in every cell (harness x library), n times."
+    }
+  },
+  "$defs": {
+    "case": {
+      "type": "object",
+      "required": [
+        "id",
+        "prompt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Unique within the eval; names run folders and the trace tag eval.case."
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The single non-interactive prompt the agent gets, run in the workspace."
+        },
+        "fixture": {
+          "$ref": "#/$defs/fixture",
+          "description": "This case's fixture; replaces the top-level default."
+        },
+        "scorers": {
+          "$ref": "#/$defs/scorers",
+          "description": "This case's scorers; replace the top-level default."
+        }
+      }
+    },
+    "scorers": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Default scorers for cases without their own: built-in ones or the project's (see the scorer `name`). The skills_used diagnostic is always added.",
+      "items": {
+        "$ref": "#/$defs/scorer"
+      }
+    },
+    "scorer": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A built-in scorer (skill_invoked, answer_matches) or one from the project's scorers package (its REGISTRY)."
+        },
+        "args": {
+          "type": "object",
+          "description": "Keyword arguments for the scorer's factory."
+        },
+        "min_pass": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum pass rate (0-1) in every cell with a library; below it, `skill-evals score` exits with 1. Baseline cells (no library) never gate. Without it, --min-pass applies, if given."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "skill_invoked"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "args"
+            ],
+            "properties": {
+              "args": {
+                "$ref": "#/$defs/skill_invoked_args"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "answer_matches"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "args"
+            ],
+            "properties": {
+              "args": {
+                "$ref": "#/$defs/answer_matches_args"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "skill_invoked_args": {
+      "type": "object",
+      "required": [
+        "skill"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "skill": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Skill name without namespace, e.g. \"pr\" or \"code-review\"."
+        },
+        "namespace_required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only count Claude Code Skill-tool loads named \"<plugin>:<skill>\", so a built-in skill of the same name doesn't count. SKILL.md reads (Codex) always count."
+        }
+      }
+    },
+    "answer_matches_args": {
+      "type": "object",
+      "required": [
+        "pattern"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Python regex searched for in the final answer. Use inline flags such as (?ms) and look-aheads to require several sections in any order."
+        }
+      }
+    },
+    "fixture": {
+      "description": "The fixture kit (a folder in the project's fixtures) that builds the workspace inside the sandbox. Without one, the agent starts in an empty workspace.",
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "The fixture's name, with its default arguments."
+        },
+        {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The fixture's folder name."
+            },
+            "args": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              },
+              "description": "Values for the arguments the kit declares (spec.yaml `args`)."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

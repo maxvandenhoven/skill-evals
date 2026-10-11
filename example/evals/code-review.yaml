@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../src/skill_evals/schemas/eval.schema.json
+# Eval: review a branch
+#
+# Does the agent use the library's `code-review` skill, and does its review
+# follow that skill's two-axis format (separate Standards and Spec sections)?
+#
+# Interesting because Claude Code also ships a BUILT-IN skill named
+# `code-review`. In the trace, the library's version is namespaced
+# (`<plugin>:code-review`, e.g. `mattpocock-skills:code-review`) and the
+# built-in is not; skill_invoked with namespace_required=true only counts the
+# library's skill.
+
+description: >-
+  Review a feature branch against a spec and standards; expects matt-pocock-skills'
+  two-axis review.
+
+# Skill libraries (folders in libraries/) to test, one sandbox per library and
+# harness. The baseline without a library runs too; `baseline: false` skips it.
+libraries: [matt-pocock-skills]
+
+cases:
+  - id: branch-review
+    prompt: Review the changes on this branch since main.
+    # Same repo as the pr eval, plus docs/unicode-slugs.md (spec) and
+    # CONTRIBUTING.md (standards) so both review axes have something to find.
+    fixture: { name: slugify-repo, args: { with_spec: true } }
+    scorers:
+      - name: skill_invoked
+        args: { skill: code-review, namespace_required: true }
+      # Did the agent look at the branch's history? A custom scorer, from
+      # example/scorers (see .skill-evals.yaml).
+      - name: command_ran
+        args: { pattern: 'git (diff|log)' }
+      # Separate Standards and Spec sections, as `## Heading` or `**Heading**`.
+      - name: answer_matches
+        args:
+          pattern: '(?ms)(?=.*^(?:#+ |\*\*)Standards)(?=.*^(?:#+ |\*\*)Spec\b)'

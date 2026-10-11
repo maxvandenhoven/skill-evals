@@ -1,0 +1,104 @@
+# The `skill-evals` command (src/skill_evals/). It runs on the host; the only Python
+# that runs inside sandboxes is the Codex tracing helper of the shipped harnesses
+# (harnesses/codex/tracing/files/home/.mlflow-codex/setup_tracing.py). The example
+# project in example/ isn't part of the package.
+[project]
+name = "skill-evals"
+version = "0.1.0"
+description = "Evaluate how coding-agent harnesses load and follow skills, in Docker sandboxes, traced with MLflow."
+authors = [
+    { name = "Max van den Hoven", email = "max.hoven@gmail.com" },
+]
+requires-python = ">=3.13"
+dependencies = [
+    "jsonschema>=4.26.0",  # Validates project files against the packaged schemas
+    "mlflow>=3.17",  # Tracking server, trace search and mlflow.genai.evaluate
+    "pandas>=3.0.6",  # Trace tables from mlflow.search_traces
+    "pyyaml>=6",  # Reads project files
+]
+
+[project.scripts]
+skill-evals = "skill_evals.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.2,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.19.2",
+    "pre-commit>=4.6.2",
+    "ruff>=0.17.0",
+    "ty>=0.0.86",
+    "types-jsonschema>=4.26.0.20261006",
+    "yamllint>=1.38.0",
+]
+
+[tool.ty.src]
+include = [
+    "src/**",
+    "example/scorers/**",
+]
+# Fixture files are test material for the agents (e.g. deliberately without docstrings).
+exclude = [
+    "example/fixtures/**",
+]
+
+[tool.ruff]
+line-length = 90
+indent-width = 4
+force-exclude = true  # Also skip excluded files that pre-commit passes explicitly
+extend-exclude = [
+    ".runs",
+    ".mlflow",
+    "example/fixtures",  # Test material for the agents, not our code
+]
+
+[tool.ruff.lint]
+# The DOC (pydoclint) rules are preview-only; enable exactly those, nothing else in preview.
+preview = true
+explicit-preview-rules = true
+select = [
+    "B",  # flake8-bugbear
+    "D",  # pydocstyle
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # isort
+    "EM",  # flake8-errmsg
+    "T20",  # flake8-print
+    "RET",  # flake8-return
+    "ANN",  # flake8-annotations
+    "DOC201",  # pydoclint: return value not documented in docstring
+    "DOC202",  # pydoclint: docstring documents a return value the function lacks
+    "DOC402",  # pydoclint: yield value not documented in docstring
+    "DOC501",  # pydoclint: raised exception not documented in docstring
+    "DOC502",  # pydoclint: docstring documents an exception that is not raised
+]
+ignore = [
+    "D100",  # Ignore missing docstring in public module
+    "D104",  # Ignore missing docstring in public package
+    "D203",  # Ignore one blank line before class docstring
+    "D213",  # Ignore multi-line docstring start on second line
+    "D400",  # Ignore missing period in docstring first line (also captured by D415)
+    "D413",  # Ignore missing newline after final section in docstring
+    "ANN002",  # Ignore missing *args type annotations
+    "ANN003",  # Ignore missing **kwargs type annotations
+    "ANN401",  # Ignore Any type annotations
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Command-line code: printing is its output, not leftover debugging.
+"src/skill_evals/{cli,run,score,init,mlflow_server}.py" = ["T201"]
+"src/skill_evals/harnesses/codex/tracing/files/home/.mlflow-codex/setup_tracing.py" = [
+    "T201",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# Commit messages follow Conventional Commits (feat:, fix:, docs:, ...), checked by
+# the commit-msg hook in .pre-commit-config.yaml. `cz commit` helps write one.
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "uv"
+tag_format = "v$version"

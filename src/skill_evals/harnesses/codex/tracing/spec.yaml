@@ -1,0 +1,66 @@
+# Kit: MLflow tracing for Codex (runs INSIDE the sandbox)
+#
+# Uses MLflow's recommended Codex integration, the notify hook of the npm package
+# @mlflow/codex. Docs:
+#   https://mlflow.org/docs/latest/genai/tracing/integrations/listing/codex/
+#
+# How a trace is made: Codex runs the program listed under `notify` in
+# ~/.codex/config.toml after every turn. `mlflow-codex notify-hook` then reads the turn
+# from Codex's transcript (rollout JSONL) and uploads one trace to MLFLOW_TRACKING_URI /
+# MLFLOW_EXPERIMENT_ID (set in harnesses/base.sbxenv.yaml):
+#
+#   AGENT codex_conversation  # Prompt in, final answer out
+#     TOOL tool_exec          # One span per tool call, e.g. `cat .../SKILL.md`
+#     LLM  llm_call           # Model, token usage
+#
+# Every Codex session gets its own trace, subagents included: matt-pocock-skills'
+# code-review spawns Standards and Spec reviewers, so one run can upload three traces.
+# The runner tags the first one (the main session) and scoring skips untagged traces.
+#
+# Differences from MLflow's documented setup (`mlflow-codex setup -y`):
+#   - The package version is pinned (`version` below), for reproducible runs and
+#     because the patch targets exactly that build.
+#   - setup_tracing.py writes the `notify` line itself, at the TOP of config.toml: the
+#     image's config ends with `[mcp_servers...]` tables, and a key after a table
+#     header belongs to that table.
+#   - Tracking URI and experiment come from environment variables, not from
+#     .codex/mlflow-tracing.json (the docs say the variables take precedence).
+#   - setup_tracing.py patches the connector so `custom_tool_call` records, which
+#     newer Codex versions write for tool calls, become TOOL spans. @mlflow/codex 0.4.0
+#     drops them, including every SKILL.md read the skill scorers rely on.
+#
+# Version coupling: the patch fails sandbox creation if the connector's code changed
+# (e.g. after a version bump). A Codex version that changes its transcript format
+# again is NOT detected: traces still upload, but tool spans can silently disappear.
+# After bumping Codex, check that a trace still has `tool_exec` spans.
+#
+# MLflow's other option, Codex's native OTLP export ([otel] in config.toml), is not
+# used. It records Codex internals (connections, scheduling) rather than the
+# conversation, and its extra traces in the same experiment would confuse the runner's
+# trace matching.
+schemaVersion: "2"
+kind: mixin
+name: codex-mlflow-tracing
+description: Send Codex turns to an MLflow tracking server.
+
+permissions:
+  network:
+    # Documentation of what this kit needs. The default local policy already allows
+    # everything; these rules matter under a stricter policy.
+    allow:
+      - localhost:5000  # Host MLflow, reached as host.docker.internal:5000
+      - registry.npmjs.org  # npm install of @mlflow/codex
+
+args:
+  version:
+    description: "@mlflow/codex version. setup_tracing.py patches this exact build."
+    default: "0.4.0"
+
+# The kit's files/home/ tree is copied to /home/agent/ BEFORE setup.install runs, so
+# the helper script below is already in place.
+setup:
+  install:
+    - command: npm install -g @mlflow/codex@${{ kit.args.version }}
+      user: "1000"  # Agent user
+    - command: python3 /home/agent/.mlflow-codex/setup_tracing.py
+      user: "1000"  # Agent user

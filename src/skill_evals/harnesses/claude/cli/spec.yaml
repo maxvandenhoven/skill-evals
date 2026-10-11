@@ -1,0 +1,32 @@
+# Kit: pin the Claude Code CLI version (runs INSIDE the sandbox)
+#
+# The sbx image ships whatever Claude Code version it was built with (2.1.280
+# in the 2026-09-23 image), which drifts from the CLI you'd use today and
+# changes when the image is rebuilt. This kit installs one exact version, so
+# every run tests the same harness and results are reproducible.
+schemaVersion: "2"
+kind: mixin
+name: claude-cli-pinned
+description: Install a pinned Claude Code version.
+
+args:
+  version:
+    description: Claude Code version to install (npm @anthropic-ai/claude-code).
+    default: "2.1.296"
+
+environment:
+  variables:
+    DISABLE_AUTOUPDATER: "1"
+
+permissions:
+  network:
+    allow:
+      - claude.ai
+      - storage.googleapis.com
+
+setup:
+  install:
+    - command: >-
+        claude install ${{ kit.args.version }} --force &&
+        claude --version | grep -q "^${{ kit.args.version }} "
+      user: "1000"  # Agent user

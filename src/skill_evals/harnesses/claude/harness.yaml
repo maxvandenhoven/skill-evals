@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schemas/harness.schema.json
+# How `skill-evals run` drives Claude Code inside its sandbox.
+#
+# The sbxenv.yaml files can't hold this (sbx rejects unknown keys), so it lives here.
+
+# The command for one non-interactive eval turn, run via `sbx env exec` in the
+# workspace. "{prompt}" is replaced by the eval's prompt as a single argument
+# (no shell, so no quoting issues). Permissions need no flag: the sandbox's
+# ~/.claude/settings.json already sets bypassPermissions.
+#
+# Model: an explicit id, so all runs use the same model.
+run: [claude, -p, "{prompt}", --model, claude-sonnet-5-5]
+
+# Recorded on each trace (tag eval.inventory) and in inventory.txt: the CLI
+# version actually running and the installed plugins (e.g. the library version
+# the prescribed install produced).
+inventory: [sh, -c, "claude --version && claude plugin list"]
+
+# Seconds to wait after the run before deleting the sandbox, so the tracing
+# hook has finished uploading. Claude's plugin exports at session end.
+settle_seconds: 5
+
+# Which trace reader (skill_evals.traces) understands this harness's traces.
+trace_reader: claude

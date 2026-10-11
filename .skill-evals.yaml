@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=src/skill_evals/schemas/config.schema.json
+# This repository is itself a skill-evals project: the example in example/, laid out
+# as `skill-evals init` lays out yours. It uses the package's own harnesses instead of
+# copies, so its runs test exactly the harnesses that ship.
+evals: example/evals
+harnesses: src/skill_evals/harnesses
+libraries: example/libraries
+fixtures: example/fixtures
+scorers: example/scorers
+runs: .runs
+mlflow: .mlflow

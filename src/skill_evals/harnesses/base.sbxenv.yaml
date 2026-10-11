@@ -1,0 +1,55 @@
+# Shared base layer for EVERY eval sandbox.
+#
+# A sandbox is described by one or more `sbxenv.yaml` files that sbx deep-merges
+# in order (like `docker compose -f a.yml -f b.yml`):
+#
+#   1. harnesses/base.sbxenv.yaml  # What all runs share
+#   2. harnesses/<harness>/sbxenv.yaml  # Agent-specific setup (e.g. tracing)
+#   3. libraries/<library>/<harness>/sbxenv.yaml  # Skill library-specific setup
+#
+# Later layers override scalar values; lists such as `kits` are concatenated.
+schemaVersion: "1"
+
+# Per-run inputs. The runner passes them with `--env-arg name=value`, and they are
+# referenced below as ${{ env.args.<name> }}. sbx substitutes nothing else: a
+# plain "$" stays literal.
+args:
+  workspace:
+    required: true  # Host directory for the run's workspace (set up by a fixture)
+  experiment_id:
+    required: true  # MLflow experiment that receives this run's trace
+
+# The workspace is mounted into the sandbox at the same path as on the host, and
+# `sbx env exec` starts commands in it. Each run gets a fresh, empty folder that the
+# case's fixture kit fills while the sandbox is created, so whatever the agent writes
+# there stays inspectable afterwards (in the run folder).
+# (Alternative: `clone: true` gives the agent a private in-sandbox git clone
+# and keeps the host copy read-only.)
+workspace: "${{ env.args.workspace }}"
+
+sandboxOptions:
+  # By default, sbx links a shared "skills store" into every sandbox's skills folder.
+  # Switch it off: the only skills present should be the agent's built-ins
+  # plus the library under test. Your host ~/.claude and ~/.codex are never
+  # visible inside a sandbox in any case.
+  skills: "off"
+
+# Environment variables for the sandbox. Both MLflow connectors (Claude Code
+# plugin and Codex notify hook) read these two.
+env:
+  # Inside the sandbox VM, "host.docker.internal" reaches your machine through
+  # the sbx host proxy, which forwards to localhost:5000 there.
+  MLFLOW_TRACKING_URI: http://host.docker.internal:5000
+  MLFLOW_EXPERIMENT_ID: "${{ env.args.experiment_id }}"
+
+# Lifecycle commands run on the HOST (not in the sandbox) around create/run/rm.
+# In-sandbox setup belongs in kits (see claude/tracing/spec.yaml).
+# Here it's a fast pre-flight check: without a reachable MLflow server every
+# trace would be lost silently, so fail before the sandbox is even created.
+lifecycle:
+  initialize:
+    - name: mlflow-reachable
+      command: >-
+        curl -sf --max-time 5 http://127.0.0.1:5000/health > /dev/null || {
+        echo "MLflow is not running on :5000. Start it with: skill-evals mlflow" >&2;
+        exit 1; }

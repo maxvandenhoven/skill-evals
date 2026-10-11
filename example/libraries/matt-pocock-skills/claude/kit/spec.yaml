@@ -1,0 +1,36 @@
+# Kit: install matt-pocock-skills into Claude Code, as its README prescribes
+#
+# Source: https://github.com/mattpocock/skills (README, "Claude Code"):
+#     claude plugin install mattpocock-skills@claude-plugins-official
+#
+# One extra step: a fresh Claude Code install (like the sandbox image) has no
+# `claude-plugins-official` marketplace configured yet, which on a normal
+# machine is added automatically. Without it the install fails with
+# "Plugin not found in marketplace", so it is added first.
+#
+# Note what "as prescribed" means here: Anthropic's official marketplace does
+# not track the repo. Its entry pins one commit
+# (`"source": {"url": "https://github.com/mattpocock/skills.git", "sha": "c55ee46..."}`,
+# 2026-09-18, plugin version 1.2.3). `pr` only moved from in-progress/ to
+# engineering/ on 2026-09-24, so it is NOT in this plugin, while Codex installs
+# the repo's latest release (1.3.1) from the repo's own marketplace. The
+# sandbox isn't the cause: a fresh `claude plugin install` anywhere gets the
+# same pinned commit until Anthropic bumps it. The installed version is
+# recorded on every trace (tag `eval.inventory`).
+schemaVersion: "2"
+kind: mixin
+name: matt-pocock-skills-claude
+description: Matt Pocock's skills via the official Claude Code plugin marketplace.
+
+permissions:
+  network:
+    allow:
+      - github.com
+      - codeload.github.com
+
+setup:
+  install:
+    - command: >-
+        claude plugin marketplace add anthropics/claude-plugins-official &&
+        claude plugin install mattpocock-skills@claude-plugins-official
+      user: "1000"

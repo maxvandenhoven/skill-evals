@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schemas/harness.schema.json
+# How `skill-evals run` drives Codex inside its sandbox.
+
+# `codex exec` = one non-interactive turn. Approvals and Codex's own sandbox
+# are already off in the image's config.toml.
+run: [codex, exec, "{prompt}"]
+
+# Recorded on each trace (tag eval.inventory) and in inventory.txt: the CLI
+# version actually running and the installed plugins (e.g. matt-pocock-skills version).
+inventory: [sh, -c, "codex --version && codex plugin list"]
+
+# Codex fires its `notify` hook after the turn; the hook reads the session
+# transcript and uploads the trace. Give it time before the sandbox is removed.
+settle_seconds: 8
+
+# Which trace reader (skill_evals.traces) understands this harness's traces.
+trace_reader: codex
