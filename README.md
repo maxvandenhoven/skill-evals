@@ -1,4 +1,7 @@
-# `skill-evals`
+<h1 align="center">
+  <img src="https://github.com/maxvandenhoven/skill-evals/blob/main/images/logo-light.svg?raw=true#gh-light-mode-only" width="300">
+  <img src="https://github.com/maxvandenhoven/skill-evals/blob/main/images/logo-dark.svg?raw=true#gh-dark-mode-only" width="300">
+</h1>
 
 `skill-evals` tests whether coding agents load your skills and follow them.
 
