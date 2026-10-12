@@ -205,8 +205,10 @@ The CI runner has the same requirements as sbx. Local sandboxes run as microVMs,
 a Linux runner must run Ubuntu 24.04 or later with KVM enabled, and the virtual
 machine needs nested virtualization if the runner is itself a virtual machine. The
 runner also needs `sbx` installed and signed in. Because `sbx login` opens a
-browser, sign in once by hand on a self-hosted runner. Every run costs model tokens,
-so run the evals on demand or when a skill changes, rather than on every push.
+browser, sign in once by hand on a self-hosted runner. The
+[sbx documentation on automation](https://docs.docker.com/ai/sandboxes/workflows/automation/)
+describes how to run sbx in such a pipeline. Every run costs model tokens, so run the
+evals on demand or when a skill changes, rather than on every push.
 
 ## Features
 
