@@ -73,30 +73,39 @@ skill-evals validate                                     # Check your eval files
 
 ### Logging the agents in
 
-Sandboxes never see your `~/.claude` or `~/.codex`. The credentials live in the
-secret store of sbx on your machine, and the sandbox proxy adds them to the agent's
-requests, so they never enter a sandbox. First sign in to sbx itself with
-`sbx login`, which you only need to do once. Then choose one of the following
-options for each agent:
+The agents authenticate through the normal
+[credential flow of sbx](https://docs.docker.com/ai/sandboxes/configuration/credentials/),
+so every login method that sbx supports also works for `skill-evals`. Sandboxes never
+see your `~/.claude` or `~/.codex`. The credentials live in the secret store of sbx on
+your machine, and the sandbox proxy adds them to the agent's requests, so they never
+enter a sandbox. First sign in to sbx itself with `sbx login`. Then log each agent in,
+as described for each agent in the
+[sbx documentation](https://docs.docker.com/ai/sandboxes/agents/).
 
-| Agent | Subscription | API key |
-|---|---|---|
-| Claude Code | Run `sbx run claude` in an empty folder, type `/login`, and exit. | `sbx secret set anthropic` |
-| Codex | `sbx secret set openai --oauth` (ChatGPT plan) | `sbx secret set openai` |
+For local development, a subscription is the easiest option. You only need to log in
+once:
 
-To log in with a Claude subscription, use a throwaway sandbox and remove it
-afterwards:
+```bash
+sbx secret set openai --oauth   # Codex: sign in with your ChatGPT plan
+make claude-login               # Claude Code: run /login in the sandbox, then /exit
+sbx secret ls                   # Both anthropic and openai should be listed
+```
+
+`make claude-login` comes with this repository. In your own project, run the same
+steps by hand in a throwaway sandbox:
 
 ```bash
 mkdir -p /tmp/claude-login && sbx run --name claude-login claude /tmp/claude-login
-# In Claude Code: run /login, finish in the browser, then /exit
 sbx rm -f claude-login
-sbx secret ls   # Both anthropic and openai should be listed
 ```
 
 Claude Code only offers `/login` while no Anthropic API key is stored, so remove an
 existing key first with `sbx secret rm anthropic`. Storing a token from
 `claude setup-token` as the API key does not work.
+
+API keys work as well, with `sbx secret set anthropic` and `sbx secret set openai`.
+Use them in CI, where an interactive login is not possible; see
+[Running in CI](#running-in-ci).
 
 ## Install
 
