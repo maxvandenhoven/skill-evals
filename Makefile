@@ -1,6 +1,6 @@
 # Common commands. The eval pipeline itself is described in README.md.
 
-.PHONY: sync install-pre-commit pre-commit format lint type check \
+.PHONY: sync install-pre-commit pre-commit format lint type check test record-trace \
 	mlflow claude-login evals score
 
 # Eval selection for `make evals`, overridable: `make evals EVALS=pr N=10`.
@@ -32,6 +32,15 @@ type:
 	@uv run ty check
 
 check: format lint type
+
+# Unit tests with a coverage report. They need no sbx, network or MLflow server.
+test:
+	@uv run pytest --cov=skill_evals --cov-report=term-missing
+
+# Record a run's trace as scrubbed test data in tests/data/, e.g. after an agent
+# upgrade: `make record-trace RUN=.runs/<stamp>/<cell>-<case>-<i>` (optional NAME=).
+record-trace:
+	uv run python tests/record_trace.py $(RUN) $(if $(NAME),--name $(NAME))
 
 # Open the MLflow UI on this project's store. Not needed for runs: run, score and
 # evaluate start a server for their duration if none is up.

@@ -37,6 +37,37 @@ runs the same checks on every commit.
 make check
 ```
 
+## Tests
+
+The unit tests take seconds and need no `sbx`, network or model credentials. Run all of
+them, with a coverage report, using `make test`. To run one file, or only the tests
+whose name matches a word, call `pytest` through uv:
+
+```bash
+make test
+uv run pytest tests/test_config.py -k discover
+```
+
+Keep the tests up to date with your change. A new feature or changed behavior comes
+with new or updated tests in the same pull request, and a bug fix starts with a test
+that fails before the fix. If you fix a bug that a test marks with `xfail`, remove the
+mark.
+
+A test function gets a one-line docstring that starts with a verb, such as "Check that
+a missing config suggests `skill-evals init`." Fixtures and helpers get the full Google
+docstring that the source code uses, with `Args` and `Returns`.
+
+Some tests read real agent traces from `tests/data/`. When an agent upgrade changes
+how its traces look, record a new one from a run folder with the command below. The
+script scrubs paths, e-mail addresses and credentials, but check the file before you
+commit it, and update the tests that depend on it.
+
+```bash
+make record-trace RUN=.runs/<stamp>/<cell>-<case>-<i>
+```
+
+## Real runs
+
 If your change affects how runs work, also try one cell for real, for example with the
 command below, and mention it in the pull request. This needs `sbx` and uses model
 credits, so you can skip it for docs or small fixes.

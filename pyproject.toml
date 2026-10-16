@@ -39,10 +39,22 @@ build-backend = "uv_build"
 dev = [
     "commitizen>=4.19.2",
     "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
     "ty>=0.0.86",
     "types-jsonschema>=4.26.0.20261006",
     "yamllint>=1.38.0",
+]
+
+# Unit tests: no sbx, Docker, network, model credentials or MLflow server. Run them
+# with `make test`, which adds a coverage report.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not integration'"
+strict_markers = true
+markers = [
+    "integration: needs sbx and Docker login, no model credentials; not run by default",
 ]
 
 [tool.ty.environment]
@@ -52,6 +64,7 @@ python-version = "3.12"  # The oldest supported version
 include = [
     "src/**",
     "example/scorers/**",
+    "tests/**",
 ]
 # Fixture files are test material for the agents (e.g. deliberately without docstrings).
 exclude = [
@@ -103,6 +116,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Command-line code: printing is its output, not leftover debugging.
 "src/skill_evals/{cli,run,score,init,mlflow_server}.py" = ["T201"]
+"tests/record_trace.py" = ["T201"]
 "src/skill_evals/harnesses/codex/tracing/files/home/.mlflow-codex/setup_tracing.py" = [
     "T201",
 ]
