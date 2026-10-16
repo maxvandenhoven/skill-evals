@@ -45,12 +45,12 @@ def example_pattern(eval_name: str) -> str:
     ],
 )
 def test_skill_invoked(name: str, expected: bool) -> None:
-    """The library runs loaded the pr skill; the baselines loaded no skill."""
+    """Check that library runs loaded the pr skill and baselines loaded no skill."""
     assert skill_invoked("pr")(trace=load_trace(name)) is expected
 
 
 def test_skill_invoked_other_skill() -> None:
-    """Loading one skill doesn't count as loading another."""
+    """Check that loading one skill doesn't count as loading another."""
     assert skill_invoked("code-review")(trace=load_trace(CLAUDE_SKILL)) is False
 
 
@@ -65,13 +65,13 @@ def test_skill_invoked_other_skill() -> None:
     ],
 )
 def test_skill_invoked_namespace_required(trace: Trace, expected: bool) -> None:
-    """With namespace_required, only plugin skills and SKILL.md reads count."""
+    """Check that with namespace_required only plugin skills and SKILL.md reads count."""
     assert skill_invoked("pr", namespace_required=True)(trace=trace) is expected
     assert skill_invoked("pr")(trace=trace) is True
 
 
 def test_skill_invoked_is_named_after_skill() -> None:
-    """Each skill_invoked scorer is named after its skill, so several can coexist."""
+    """Check that each skill_invoked scorer is named after its skill."""
     assert skill_invoked("code-review").name == "skill_invoked:code-review"
 
 
@@ -101,7 +101,7 @@ def test_skill_invoked_is_named_after_skill() -> None:
     ],
 )
 def test_skills_used(trace: Trace, expected: str) -> None:
-    """skills_used lists the loaded skills once each, as the harness named them."""
+    """Check that skills_used lists each loaded skill once, as the harness named it."""
     assert skills_used(trace=trace) == expected
 
 
@@ -115,7 +115,7 @@ def test_skills_used(trace: Trace, expected: str) -> None:
     ],
 )
 def test_answer_matches_pr_template(name: str, expected: bool) -> None:
-    """The pr eval's pattern accepts the PR bodies written with the skill."""
+    """Check that the pr eval's pattern accepts the PR bodies written with the skill."""
     trace = load_trace(name)
     assert answer_matches(example_pattern("pr"))(trace=trace) is expected
 
@@ -137,25 +137,25 @@ def test_answer_matches_pr_template(name: str, expected: bool) -> None:
     ],
 )
 def test_answer_matches_review_format(trace: Trace, expected: bool) -> None:
-    """The code-review eval's pattern needs both a Standards and a Spec section."""
+    """Check that the code-review pattern needs a Standards and a Spec section."""
     assert answer_matches(example_pattern("code-review"))(trace=trace) is expected
 
 
 def test_answer_matches_searches_anywhere() -> None:
-    """The pattern may match anywhere in the answer, not only at its start."""
+    """Check that the pattern may match anywhere in the answer, not only at its start."""
     trace = load_trace(CLAUDE_BASELINE)
     assert answer_matches("slugify")(trace=trace) is True
     assert answer_matches("^slugify")(trace=trace) is False
 
 
 def test_answer_matches_without_answer() -> None:
-    """A trace without a final answer doesn't match."""
+    """Check that a trace without a final answer doesn't match."""
     trace = edited_trace(CODEX_SKILL, "codex_conversation", outputs=None)
     assert answer_matches(".")(trace=trace) is False
 
 
 def test_build_scorers_in_spec_order() -> None:
-    """Scorers are built from their specs in order, then the diagnostics."""
+    """Check that scorers are built from their specs in order, then the diagnostics."""
     scorers = build_scorers(
         [
             {"name": "answer_matches", "args": {"pattern": "x"}, "min_pass": 0.5},
@@ -171,13 +171,13 @@ def test_build_scorers_in_spec_order() -> None:
 
 
 def test_build_scorers_unknown_name() -> None:
-    """An unknown scorer name lists the available ones."""
+    """Check that an unknown scorer name lists the available ones."""
     with pytest.raises(ValueError, match=r"unknown scorer 'nope'; available: \['answer"):
         build_scorers([{"name": "nope"}])
 
 
 def test_build_scorers_with_registry() -> None:
-    """A registry with project scorers is used instead of the built-in one."""
+    """Check that a registry with project scorers is used instead of the built-in one."""
     registry = {**REGISTRY, "skill_invoked": lambda: skills_used}
     assert [s.name for s in build_scorers([{"name": "skill_invoked"}], registry)] == [
         "skills_used",

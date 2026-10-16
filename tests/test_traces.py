@@ -34,7 +34,7 @@ from tests.helpers import (
     ],
 )
 def test_reader_for_picks_harness_reader(name: str, reader: type) -> None:
-    """Each trace is read by the reader its tags name."""
+    """Check that each trace is read by the reader its tags name."""
     assert isinstance(reader_for(load_trace(name)), reader)
 
 
@@ -46,7 +46,7 @@ def test_reader_for_picks_harness_reader(name: str, reader: type) -> None:
     ],
 )
 def test_reader_for_rejects_unknown_reader(tags: dict[str, str], message: str) -> None:
-    """A trace without a known reader names the registered ones."""
+    """Check that a trace without a known reader names the registered ones."""
     data = trace_dict(CLAUDE_SKILL)
     data["info"]["tags"] = tags
     with pytest.raises(ValueError, match=r"trace tr-\w+: ") as exc:
@@ -55,7 +55,7 @@ def test_reader_for_rejects_unknown_reader(tags: dict[str, str], message: str) -
 
 
 def test_readers_match_harness_schema() -> None:
-    """The readers a harness.yaml may name are exactly the registered ones."""
+    """Check that the readers a harness.yaml may name are exactly the registered ones."""
     schema = json.loads((SCHEMAS / "harness.schema.json").read_text())
     assert sorted(schema["properties"]["trace_reader"]["enum"]) == sorted(READERS)
 
@@ -70,7 +70,7 @@ def test_readers_match_harness_schema() -> None:
     ],
 )
 def test_final_answer(name: str, start: str, sections: list[str]) -> None:
-    """The final answer is the agent's whole last reply."""
+    """Check that the final answer is the agent's whole last reply."""
     trace = load_trace(name)
     answer = reader_for(trace).final_answer(trace)
     assert answer.startswith(start)
@@ -87,20 +87,20 @@ def test_final_answer(name: str, start: str, sections: list[str]) -> None:
     ],
 )
 def test_claude_final_answer_shapes(outputs: object, expected: str) -> None:
-    """Claude Code's answer is the root `response`, or the outputs as text."""
+    """Check that Claude Code's answer is the root `response`, or the outputs as text."""
     trace = edited_trace(CLAUDE_SKILL, "claude_code_conversation", outputs=outputs)
     assert ClaudeReader().final_answer(trace) == expected
 
 
 @pytest.mark.parametrize(("outputs", "expected"), [("Done.", "Done."), (None, "")])
 def test_codex_final_answer_shapes(outputs: object, expected: str) -> None:
-    """Codex's answer is the root span's text output; empty without one."""
+    """Check that Codex's answer is the root span's text output, and empty without one."""
     trace = edited_trace(CODEX_SKILL, "codex_conversation", outputs=outputs)
     assert CodexReader().final_answer(trace) == expected
 
 
 def test_root_span_missing() -> None:
-    """A trace without a root span is an error that names the trace."""
+    """Check that a trace without a root span is an error that names the trace."""
     data = trace_dict(CLAUDE_SKILL)
     data["data"]["spans"] = [s for s in data["data"]["spans"] if s["parent_span_id"]]
     trace = Trace.from_dict(data)
@@ -121,13 +121,13 @@ def test_root_span_missing() -> None:
     ],
 )
 def test_skill_loads(name: str, loads: list[SkillLoad]) -> None:
-    """Claude Code loads skills with its Skill tool, Codex by reading SKILL.md."""
+    """Check that Claude Code loads skills via its Skill tool, Codex via SKILL.md."""
     trace = load_trace(name)
     assert reader_for(trace).skill_loads(trace) == loads
 
 
 def test_codex_skill_list_in_prompt_is_not_a_load() -> None:
-    """SKILL.md paths in Codex's system prompt don't count, only tool calls do."""
+    """Check that SKILL.md paths in Codex's system prompt don't count as loads."""
     assert "SKILL.md" in (DATA / f"{CODEX_BASELINE}.json").read_text()
     assert CodexReader().skill_loads(load_trace(CODEX_BASELINE)) == []
 
@@ -140,13 +140,13 @@ def test_codex_skill_list_in_prompt_is_not_a_load() -> None:
     ],
 )
 def test_claude_rejected_skill_call_is_not_a_load(result: str) -> None:
-    """A Skill call the agent rejected leaves a span but loads nothing."""
+    """Check that a Skill call the agent rejected leaves a span but loads nothing."""
     trace = with_skill_call("nope", result)
     assert ClaudeReader().skill_loads(trace) == []
 
 
 def test_claude_builtin_skill_has_no_plugin() -> None:
-    """A built-in or project skill is loaded without a namespace."""
+    """Check that a built-in or project skill is loaded without a namespace."""
     trace = with_skill_call("code-review", "Launching skill: code-review")
     assert ClaudeReader().skill_loads(trace) == [
         SkillLoad(skill="code-review", plugin=None, source="tool")
@@ -154,7 +154,7 @@ def test_claude_builtin_skill_has_no_plugin() -> None:
 
 
 def test_claude_skill_file_read_counts() -> None:
-    """Claude Code reading a SKILL.md with another tool counts as a file load."""
+    """Check that Claude Code reading a SKILL.md with another tool is a file load."""
     trace = edited_trace(
         CLAUDE_SKILL, "tool_Bash", inputs={"command": "cat ~/.claude/skills/tdd/SKILL.md"}
     )
@@ -165,7 +165,7 @@ def test_claude_skill_file_read_counts() -> None:
 
 
 def test_tool_calls_in_start_order() -> None:
-    """Tool calls come from the TOOL spans, by start time, without the tool_ prefix."""
+    """Check that tool calls are the TOOL spans by start time, minus the tool_ prefix."""
     trace = load_trace(CLAUDE_SKILL)
     calls = ClaudeReader().tool_calls(trace)
     assert [c.name for c in calls] == ["Skill"] + ["Bash"] * 5
@@ -175,20 +175,20 @@ def test_tool_calls_in_start_order() -> None:
 
 
 def test_codex_tool_calls_are_exec() -> None:
-    """Codex's tool calls are exec calls whose input is the script it ran."""
+    """Check that Codex's tool calls are exec calls whose input is the script it ran."""
     calls = CodexReader().tool_calls(load_trace(CODEX_SKILL))
     assert {c.name for c in calls} == {"exec"}
     assert "skills/engineering/pr/SKILL.md" in calls[0].inputs["input"]
 
 
 def test_tool_call_with_non_dict_inputs() -> None:
-    """Inputs that aren't a mapping are wrapped as {"input": ...}."""
+    """Check that inputs that aren't a mapping are wrapped as {"input": ...}."""
     trace = edited_trace(CLAUDE_SKILL, "tool_Bash", inputs="ls")
     assert ClaudeReader().tool_calls(trace)[1].inputs == {"input": "ls"}
 
 
 def test_skill_file_reads_finds_every_path() -> None:
-    """Every <skill>/SKILL.md in a call's arguments is a load, in order."""
+    """Check that every <skill>/SKILL.md in a call's arguments is a load, in order."""
     call = ToolCall(
         name="exec",
         inputs={"input": "cat a/write.docs/SKILL.md ~/x/my-skill_2/SKILL.md README.md"},
@@ -198,7 +198,7 @@ def test_skill_file_reads_finds_every_path() -> None:
 
 
 def test_inputs_text_keeps_unicode() -> None:
-    """The arguments' text keeps non-ASCII characters for substring checks."""
+    """Check that the arguments' text keeps non-ASCII characters for substring checks."""
     call = ToolCall(name="Bash", inputs={"command": "echo Crème"}, output="")
     assert call.inputs_text == '{"command": "echo Crème"}'
 
@@ -214,5 +214,5 @@ def test_inputs_text_keeps_unicode() -> None:
     ],
 )
 def test_skill_load_str(load: SkillLoad, text: str) -> None:
-    """A load is shown the way the harness named it."""
+    """Check that a load is shown the way the harness named it."""
     assert str(load) == text

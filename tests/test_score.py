@@ -39,7 +39,7 @@ OLD_STAMP = "20261011-205026"
     ],
 )
 def test_format_values(values: list[Any], text: str) -> None:
-    """Pass/fail values show as k/n, diagnostics as their distinct values."""
+    """Check that pass/fail values show as k/n and diagnostics as distinct values."""
     assert format_values(values) == text
 
 
@@ -55,7 +55,7 @@ def test_format_values(values: list[Any], text: str) -> None:
 def test_row_failed(
     library: str, values: list[bool], threshold: float, failed: list[str]
 ) -> None:
-    """A scorer fails when its pass rate is below its threshold, in library cells."""
+    """Check that a scorer fails below its threshold pass rate, in library cells."""
     row = Row(
         "pr", f"claude/{library}", library, "one",
         {"skill_invoked:pr": values, "answer_matches": [False] * len(values)},
@@ -65,7 +65,7 @@ def test_row_failed(
 
 
 def test_row_without_results_fails_its_thresholds() -> None:
-    """A threshold without any values counts as a pass rate of 0."""
+    """Check that a threshold without any values counts as a pass rate of 0."""
     row = Row("pr", "claude/lib", "lib", "one", {}, {"answer_matches": 0.1})
     assert row.failures() == [
         "pr claude/lib one: answer_matches passed 0/0, below min_pass 0.1"
@@ -73,7 +73,7 @@ def test_row_without_results_fails_its_thresholds() -> None:
 
 
 def test_row_failures_describe_misses() -> None:
-    """Each miss names the eval, cell, case, scorer, result and threshold."""
+    """Check that each miss names the eval, cell, case, scorer, result and threshold."""
     row = Row(
         "pr", "codex/lib", "lib", "one",
         {"a": [True, False], "b": [False, False]}, {"a": 0.75, "b": 0.5},
@@ -85,7 +85,7 @@ def test_row_failures_describe_misses() -> None:
 
 
 def test_text_line() -> None:
-    """A terminal line shows the case, n and every scorer's result."""
+    """Check that a terminal line shows the case, n and every scorer's result."""
     row = Row(
         "pr", "claude/lib", "lib", "feature-branch",
         {"skill_invoked:pr": [True, False], "skills_used": ["pr", "(none)"]},
@@ -99,7 +99,7 @@ def test_text_line() -> None:
 
 
 def test_markdown_tables_per_eval() -> None:
-    """Markdown has one table per eval, with misses marked and listed."""
+    """Check that the Markdown has one table per eval, with misses marked and listed."""
     rows = [
         Row("pr", "claude/lib", "lib", "one", {"a": [True, False], "skills_used": ["pr"]},
             {"a": 1.0}),
@@ -129,18 +129,18 @@ def test_markdown_tables_per_eval() -> None:
 
 
 def test_markdown_without_misses() -> None:
-    """Without misses, there is no threshold section."""
+    """Check that there is no threshold section without misses."""
     text = markdown([Row("pr", "claude/lib", "lib", "one", {"a": [True]}, {"a": 1.0})])
     assert "Below threshold" not in text
 
 
 def test_resolve_stamp_keeps_explicit_stamp(project_dir: ProjectBuilder) -> None:
-    """A given stamp is used as is, without looking at the run folders."""
+    """Check that a given stamp is used as is, without looking at the run folders."""
     assert resolve_stamp(OLD_STAMP) == OLD_STAMP
 
 
 def test_resolve_latest_stamp(project_dir: ProjectBuilder) -> None:
-    """`latest` is the newest run folder with a report, by its stamp name."""
+    """Check that `latest` is the newest run folder with a report, by its stamp name."""
     for folder in (OLD_STAMP, STAMP, "claude-login", "20991231-235959"):
         (project_dir.root / "runs" / folder).mkdir(parents=True)
     for folder in (OLD_STAMP, STAMP, "claude-login"):
@@ -149,7 +149,7 @@ def test_resolve_latest_stamp(project_dir: ProjectBuilder) -> None:
 
 
 def test_resolve_latest_stamp_without_runs(project_dir: ProjectBuilder) -> None:
-    """`latest` without any run report stops with a message."""
+    """Check that `latest` without any run report stops with a message."""
     with pytest.raises(SystemExit, match="no run with a report.md yet"):
         resolve_stamp("latest")
 
@@ -190,6 +190,9 @@ def scored_store(tmp_path_factory: pytest.TempPathFactory) -> Iterator[ProjectBu
     claude/matt-pocock-skills has a run that loaded the skill and one that didn't;
     codex/matt-pocock-skills one that did, plus an untagged trace and a run of a case
     no longer in the eval. claude/none has a baseline run from an older invocation.
+
+    Args:
+        tmp_path_factory: Makes the project's folder.
 
     Yields:
         The project; MLflow and `score` use the store meanwhile.
@@ -243,6 +246,9 @@ def scored_store(tmp_path_factory: pytest.TempPathFactory) -> Iterator[ProjectBu
 def scored(scored_store: ProjectBuilder) -> ProjectBuilder:
     """Make the scored project current for one test.
 
+    Args:
+        scored_store: The project shared by all tests of the module.
+
     Returns:
         The scored project.
     """
@@ -267,7 +273,7 @@ def score_args(**options: Any) -> argparse.Namespace:
 def test_score_latest_run_with_threshold(
     scored: ProjectBuilder, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Scoring the latest run appends its table and exits 1 on a missed threshold.
+    """Check that scoring appends the table and exits 1 on a missed threshold.
 
     --min-pass applies to answer_matches only; skill_invoked keeps its own 0.5.
     """
@@ -298,7 +304,7 @@ def test_score_latest_run_with_threshold(
 def test_score_all_runs_without_threshold(
     scored: ProjectBuilder, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Without --stamp every tagged run counts; a failing baseline doesn't gate."""
+    """Check that without --stamp every tagged run counts; baselines don't gate."""
     report = scored.root / "runs" / OLD_STAMP / "report.md"
     assert score.main(score_args(evals="pr")) == 0
     out = capsys.readouterr().out

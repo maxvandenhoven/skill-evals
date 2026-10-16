@@ -32,7 +32,7 @@ def example() -> None:
 def test_example_validates(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """`skill-evals validate` passes on the example project."""
+    """Check that `skill-evals validate` passes on the example project."""
     monkeypatch.chdir(REPO)
     monkeypatch.setattr(sys, "argv", ["skill-evals", "validate"])
     with pytest.raises(SystemExit) as exc:
@@ -43,7 +43,7 @@ def test_example_validates(
 
 @pytest.mark.usefixtures("example")
 def test_example_uses_shipped_harnesses() -> None:
-    """The example runs the package's own harnesses, the ones `init` copies."""
+    """Check that the example runs the package's own harnesses, the ones `init` copies."""
     assert project().harnesses == HARNESSES
     assert list(discover_harnesses()) == ["claude", "codex"]
     assert list(discover_evals()) == ["code-review", "pr"]
@@ -52,7 +52,7 @@ def test_example_uses_shipped_harnesses() -> None:
 @pytest.mark.usefixtures("example")
 @pytest.mark.parametrize("eval_name", ["code-review", "pr"])
 def test_example_library_supports_every_harness(eval_name: str) -> None:
-    """Every library of the example's evals has a layer for both harnesses."""
+    """Check that every library of the example's evals has a layer for both harnesses."""
     assert eval_libraries(eval_name) == ["none", "matt-pocock-skills"]
     for harness in discover_harnesses():
         assert library_layer("matt-pocock-skills", harness) is not None
@@ -60,7 +60,7 @@ def test_example_library_supports_every_harness(eval_name: str) -> None:
 
 @pytest.mark.usefixtures("example")
 def test_example_fixture_args() -> None:
-    """The code-review case passes with_spec to the fixture, as sbx's string."""
+    """Check that the code-review case passes with_spec to the fixture as a string."""
     (case,) = eval_cases("code-review")
     assert case.fixture is not None
     assert (case.fixture.name, case.fixture.args) == (
@@ -75,7 +75,7 @@ def test_example_fixture_args() -> None:
 @pytest.mark.usefixtures("example")
 @pytest.mark.parametrize("name", TRACES)
 def test_example_command_ran_scorer(name: str) -> None:
-    """The example's own scorer finds the git commands in every recorded run."""
+    """Check that the example's own scorer finds the git commands in each recording."""
     scorer = scorer_registry()["command_ran"]("git (diff|log)")
     assert scorer.name == "command_ran:git (diff|log)"
     assert scorer(trace=load_trace(name)) is True

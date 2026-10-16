@@ -47,6 +47,9 @@ def run_cli(monkeypatch: pytest.MonkeyPatch, *argv: str) -> int | str | None:
 def no_server(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Replace the MLflow server with a context that only records its use.
 
+    Args:
+        monkeypatch: Swaps in the recording context.
+
     Returns:
         One "running" per command that asked for the server.
     """
@@ -69,7 +72,7 @@ def no_server(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 def test_help_lists_commands(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """--help exits 0 and describes every command."""
+    """Check that --help exits 0 and describes every command."""
     assert run_cli(monkeypatch, "--help") == 0
     out = capsys.readouterr().out
     for command in ("init", "evaluate", "run", "score", "validate", "mlflow"):
@@ -80,7 +83,7 @@ def test_help_lists_commands(
     "command", ["init", "evaluate", "run", "score", "validate", "mlflow"]
 )
 def test_command_help(monkeypatch: pytest.MonkeyPatch, command: str) -> None:
-    """Every command has --help, which exits 0 without doing anything."""
+    """Check that every command has --help, which exits 0 without doing anything."""
     assert run_cli(monkeypatch, command, "--help") == 0
 
 
@@ -100,13 +103,13 @@ def test_usage_errors_exit_2(
     argv: tuple[str, ...],
     error: str,
 ) -> None:
-    """Wrong usage exits 2 with argparse's message."""
+    """Check that wrong usage exits 2 with argparse's message."""
     assert run_cli(monkeypatch, *argv) == 2
     assert error in capsys.readouterr().err
 
 
 def test_run_options() -> None:
-    """`run` parses its selection and repeat options, with their defaults."""
+    """Check that `run` parses its selection and repeat options, with their defaults."""
     parser = cli.build_parser()
     args = parser.parse_args(["run"])
     assert (args.evals, args.harnesses, args.cases, args.libraries) == (None,) * 4
@@ -120,7 +123,7 @@ def test_run_options() -> None:
 
 
 def test_score_and_evaluate_options() -> None:
-    """`score` and `evaluate` share the threshold options; `evaluate` also runs."""
+    """Check that `score` and `evaluate` share the threshold options."""
     parser = cli.build_parser()
     args = parser.parse_args(["score", "--stamp", "latest", "--min-pass", "0.8"])
     assert (args.stamp, args.min_pass, args.summary) == ("latest", 0.8, None)
@@ -129,7 +132,7 @@ def test_score_and_evaluate_options() -> None:
 
 
 def test_init_default_folder() -> None:
-    """`init` puts the project folders in ./skill-evals by default."""
+    """Check that `init` puts the project folders in ./skill-evals by default."""
     assert cli.build_parser().parse_args(["init"]).dir == "skill-evals"
 
 
@@ -138,7 +141,7 @@ def test_validate_exits_0(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """`validate` on a valid project prints a summary and exits 0."""
+    """Check that `validate` on a valid project prints a summary and exits 0."""
     project_dir.add_eval("one", VALID_EVAL)
     project_dir.add_harness("agent")
     assert run_cli(monkeypatch, "--config", str(project_dir.config), "validate") == 0
@@ -148,7 +151,7 @@ def test_validate_exits_0(
 def test_validate_finds_config_from_current_folder(
     project_dir: ProjectBuilder, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Without --config, `validate` uses the config above the current folder."""
+    """Check that `validate` without --config uses the config above the current folder."""
     monkeypatch.chdir(project_dir.root / "evals")
     assert run_cli(monkeypatch, "validate") == 0
 
@@ -176,7 +179,7 @@ def test_validate_invalid_project_exits_with_message(
     text: str,
     message: str,
 ) -> None:
-    """`validate` stops at the first invalid file, with a message (exit status 1)."""
+    """Check that `validate` stops at the first invalid file with exit status 1."""
     project_dir.add_harness("agent")
     project_dir.write(file, text)
     code = run_cli(monkeypatch, "--config", str(project_dir.config), "validate")
@@ -187,7 +190,7 @@ def test_validate_invalid_project_exits_with_message(
 def test_missing_config_exits_with_message(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Without a project, commands point to `skill-evals init`."""
+    """Check that commands without a project point to `skill-evals init`."""
     monkeypatch.chdir(tmp_path)
     code = run_cli(monkeypatch, "validate")
     assert isinstance(code, str)
@@ -206,7 +209,7 @@ def test_unknown_eval_exits_with_message(
     no_server: list[str],
     command: str,
 ) -> None:
-    """Naming an eval that doesn't exist stops with a message, before any sandbox."""
+    """Check that an unknown eval name stops with a message, before any sandbox."""
     project_dir.add_eval("one", VALID_EVAL)
     project_dir.add_harness("agent")
     config = str(project_dir.config)
@@ -219,7 +222,7 @@ def test_unknown_eval_exits_with_message(
 def test_with_mlflow_runs_server_and_returns_code(
     no_server: list[str], result: object, code: int
 ) -> None:
-    """Commands run inside the MLflow server; a non-integer result means success."""
+    """Check that commands run in the MLflow server; a non-integer result is success."""
     handler = cli._with_mlflow(lambda args: result)
     assert handler(argparse.Namespace()) == code
     assert no_server == ["running"]
@@ -229,7 +232,7 @@ def test_with_mlflow_runs_server_and_returns_code(
 def test_evaluate_scores_exactly_its_run(
     monkeypatch: pytest.MonkeyPatch, code: int
 ) -> None:
-    """`evaluate` scores the stamp `run` returns and exits with the score's code."""
+    """Check that `evaluate` scores the stamp `run` returns and exits with its code."""
     seen: list[str] = []
     monkeypatch.setattr(run, "main", lambda args: "20261016-215019")
     monkeypatch.setattr(score, "main", lambda args: seen.append(args.stamp) or code)
@@ -238,7 +241,7 @@ def test_evaluate_scores_exactly_its_run(
 
 
 def test_mlflow_command_refuses_second_server(monkeypatch: pytest.MonkeyPatch) -> None:
-    """`skill-evals mlflow` stops if a server already answers on the port."""
+    """Check that `skill-evals mlflow` stops if a server already answers on the port."""
     monkeypatch.setattr(mlflow_server, "is_running", lambda: True)
     code = run_cli(monkeypatch, "mlflow")
     assert isinstance(code, str)

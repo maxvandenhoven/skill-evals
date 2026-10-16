@@ -9,7 +9,7 @@ from skill_evals import mlflow_server
 
 
 def test_server_command_reachable_from_sandboxes() -> None:
-    """The server listens locally, accepts the sandbox host and proxies artifacts."""
+    """Check that the server accepts the sandbox host and proxies artifacts."""
     store = Path("/store")
     assert mlflow_server.server_command(store) == [
         sys.executable, "-m", "mlflow", "server",
@@ -22,7 +22,7 @@ def test_server_command_reachable_from_sandboxes() -> None:
 
 
 def test_running_reuses_a_server(monkeypatch: pytest.MonkeyPatch) -> None:
-    """With a server already up, nothing is started and no project is needed."""
+    """Check that a server that is already up is reused, without a project."""
     monkeypatch.setattr(mlflow_server, "is_running", lambda: True)
     monkeypatch.setattr(mlflow_server.subprocess, "Popen", None)  # Starting would fail
     with mlflow_server.running():

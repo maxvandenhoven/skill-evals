@@ -13,7 +13,11 @@ from tests.helpers import ProjectBuilder
 
 @pytest.fixture(autouse=True, scope="session")
 def _mlflow_in_tmp(tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
-    """Run in a temporary folder with a temporary MLflow store, never the repo's."""
+    """Run in a temporary folder with a temporary MLflow store, never the repo's.
+
+    Args:
+        tmp_path_factory: Makes the temporary folder.
+    """
     folder = tmp_path_factory.mktemp("cwd")
     with pytest.MonkeyPatch.context() as mp:
         # MLflow defaults to ./mlflow.db and ./mlruns, relative to the current folder.
@@ -37,6 +41,9 @@ def _fresh_state() -> Iterator[None]:
 @pytest.fixture
 def project_dir(tmp_path: Path) -> ProjectBuilder:
     """Provide an empty project in a temporary folder, made the current project.
+
+    Args:
+        tmp_path: The test's temporary folder.
 
     Returns:
         The builder for the project's files.

@@ -25,7 +25,11 @@ ENV_ARGS: dict[str, object] = {"workspace": Path("/runs/w"), "experiment_id": "7
 
 @pytest.fixture
 def no_sbx_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Answer the report's `sbx version` call without sbx."""
+    """Answer the report's `sbx version` call without sbx.
+
+    Args:
+        monkeypatch: Replaces the subprocess call that asks for the version.
+    """
 
     def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
         """Pretend to run `sbx version`.
@@ -45,14 +49,14 @@ def no_sbx_version(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_cell_names() -> None:
-    """A cell's experiment and slug are built from eval, harness and library."""
+    """Check that a cell's experiment and slug come from eval, harness and library."""
     cell = Cell("pr", "claude", "matt-pocock-skills")
     assert cell.experiment == "skill-evals/pr/claude/matt-pocock-skills"
     assert cell.slug == "pr-claude-matt-pocock-skills"
 
 
 def test_fixture_layer_with_args(tmp_path: Path) -> None:
-    """The fixture layer applies the kit by path, with the case's arguments."""
+    """Check that the fixture layer applies the kit by path, with the case's arguments."""
     fixture = Fixture(name="repo", path=Path("/kits/repo"), args={"with_spec": "true"})
     layer = fixture_layer(fixture, tmp_path)
     assert layer == tmp_path / "fixture.sbxenv.yaml"
@@ -66,7 +70,7 @@ def test_fixture_layer_with_args(tmp_path: Path) -> None:
 
 
 def test_fixture_layer_without_args(tmp_path: Path) -> None:
-    """Without arguments, the kit has no `args` key, so the kit's defaults apply."""
+    """Check that without arguments the kit has no `args` key, so defaults apply."""
     layer = fixture_layer(
         Fixture(name="repo", path=Path("/kits/repo"), args={}), tmp_path
     )
@@ -77,7 +81,7 @@ def test_fixture_layer_without_args(tmp_path: Path) -> None:
 
 
 def test_sbx_env_create() -> None:
-    """`create` names the sandbox and args, then flags, then the layers in order."""
+    """Check that `create` gives the name and args, then flags, then the layers."""
     assert sbx_env("create", LAYERS, "se-1", ENV_ARGS, "-y", "--kit-arg", "a.v=1") == [
         "sbx", "env", "create", "--name", "se-1",
         "--env-arg", "workspace=/runs/w", "--env-arg", "experiment_id=7",
@@ -87,7 +91,7 @@ def test_sbx_env_create() -> None:
 
 
 def test_sbx_env_exec_puts_command_after_layers() -> None:
-    """For `exec`, flags precede the layers and the command follows `--`."""
+    """Check that for `exec` the flags precede the layers and the command follows `--`."""
     cmd = sbx_env("exec", LAYERS, "se-1", ENV_ARGS, "--", "claude", "-p", "a -- b")
     assert cmd[-6:] == [
         "/p/base.sbxenv.yaml", "/p/claude/sbxenv.yaml", "--", "claude", "-p", "a -- b",
@@ -95,14 +99,14 @@ def test_sbx_env_exec_puts_command_after_layers() -> None:
 
 
 def test_sbx_env_flags_before_command() -> None:
-    """Flags given before `--` still go before the layers."""
+    """Check that flags given before `--` still go before the layers."""
     cmd = sbx_env("exec", LAYERS[:1], "se-1", {}, "-t", "--", "ls")
     assert cmd == ["sbx", "env", "exec", "--name", "se-1", "-t", "/p/base.sbxenv.yaml",
                    "--", "ls"]  # fmt: skip
 
 
 def test_sbx_env_rm() -> None:
-    """`rm` repeats the same names, args and layers as `create`."""
+    """Check that `rm` repeats the same names, args and layers as `create`."""
     create = sbx_env("create", LAYERS, "se-1", ENV_ARGS)
     assert sbx_env("rm", LAYERS, "se-1", ENV_ARGS, "-f") == [
         *create[:2], "rm", *create[3:-2], "-f", *create[-2:],
@@ -110,7 +114,7 @@ def test_sbx_env_rm() -> None:
 
 
 def test_kit_names_of_example_layers(tmp_path: Path) -> None:
-    """The kits of base, harness, library and fixture layers are all found."""
+    """Check that the kits of base, harness, library and fixture layers are all found."""
     fixture = Fixture(
         name="slugify-repo",
         path=REPO / "example" / "fixtures" / "slugify-repo",
@@ -131,7 +135,7 @@ def test_kit_names_of_example_layers(tmp_path: Path) -> None:
 
 
 def test_kit_names_skips_kits_without_local_spec(tmp_path: Path) -> None:
-    """Kits given as mappings count; remote kits without a local spec are skipped."""
+    """Check that mapping-style kits count and remote kits without a spec are skipped."""
     (tmp_path / "local").mkdir()
     (tmp_path / "local" / "spec.yaml").write_text("name: local-kit\n")
     layer = tmp_path / "sbxenv.yaml"
@@ -145,7 +149,7 @@ def test_kit_names_skips_kits_without_local_spec(tmp_path: Path) -> None:
 
 @pytest.mark.usefixtures("no_sbx_version")
 def test_write_report(project_dir: ProjectBuilder) -> None:
-    """The run report lists the command, sbx version and one row per run."""
+    """Check that the run report lists the command, sbx version and one row per run."""
     rows = [
         Row(cell="pr-claude-none", case="one", repeat=1, trace="tr-1", exit=0, note=""),
         Row(cell="pr-codex-none", case="one", repeat=1, trace=None, exit=None,
@@ -173,6 +177,11 @@ def planned(
     """Provide a project with two evals, harnesses and libraries; runs are recorded.
 
     `b` only supports claude, and `e2` skips its baseline.
+
+    Args:
+        project_dir: The empty project to fill.
+        monkeypatch: Replaces the function that runs one case with a recorder.
+        no_sbx_version: Keeps the report from calling sbx.
 
     Returns:
         The runs `run.main` asked for: (cell slug, case id, repeat), in order.
@@ -236,7 +245,7 @@ def run_args(**options: Any) -> argparse.Namespace:
 def test_run_plans_every_cell(
     planned: list[tuple[str, str, int]], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Every eval runs in every harness, with its baseline and each supported library."""
+    """Check that every eval runs per harness, with its baseline and each library."""
     stamp = run.main(run_args())
     out = capsys.readouterr().out
     assert sorted({slug for slug, _, _ in planned}) == [
@@ -252,7 +261,7 @@ def test_run_plans_every_cell(
 
 
 def test_run_cases_in_order_with_repeats(planned: list[tuple[str, str, int]]) -> None:
-    """Within a cell, cases and their repeats run one after another, in order."""
+    """Check that a cell runs its cases and their repeats one after another."""
     run.main(run_args(evals="e1", harnesses="codex", libraries="a", repeats=2))
     assert planned == [
         ("e1-codex-a", "one", 1),
@@ -263,6 +272,6 @@ def test_run_cases_in_order_with_repeats(planned: list[tuple[str, str, int]]) ->
 
 
 def test_run_baselines_only(planned: list[tuple[str, str, int]]) -> None:
-    """--libraries none runs only the baselines; evals without one are left out."""
+    """Check that --libraries none runs only baselines and skips evals without one."""
     run.main(run_args(libraries="none", cases="two"))
     assert planned == [("e1-claude-none", "two", 1), ("e1-codex-none", "two", 1)]

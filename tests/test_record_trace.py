@@ -25,7 +25,7 @@ HOME = Path("/home/jdoe")
     ],
 )
 def test_scrub(text: str, expected: str) -> None:
-    """Host folders, the user name, e-mail addresses and credentials are replaced."""
+    """Check that host folders, the user name, e-mails and credentials are replaced."""
     assert scrub(text, ROOT, HOME, "jdoe") == expected
 
 
@@ -40,13 +40,13 @@ def test_scrub(text: str, expected: str) -> None:
     ],
 )
 def test_scrub_keeps_ordinary_text(text: str) -> None:
-    """Sandbox paths, plugin ids and words that merely contain the user name stay."""
+    """Check that sandbox paths, plugin ids and look-alike words are kept."""
     assert scrub(text, ROOT, HOME, "jdoe") == text
 
 
 @pytest.mark.parametrize("path", sorted(DATA.glob("*.json")), ids=lambda p: p.stem)
 def test_recorded_data_is_scrubbed(path: Path) -> None:
-    """Recorded traces hold no host home folders, e-mail addresses or credentials."""
+    """Check that recorded traces hold no home folders, e-mails or credentials."""
     text = path.read_text()
     assert set(re.findall(r"/home/[\w.-]+", text)) <= {"/home/agent", "/home/user"}
     emails = re.findall(r"[\w.%+-]+@[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b", text)
