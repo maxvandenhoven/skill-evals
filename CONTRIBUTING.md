@@ -87,6 +87,9 @@ how you tested it. Give the PR a title in
 PRs are squash-merged, so the title becomes the commit on `main` and the changelog
 line. The maintainer can fix a title when merging. Smaller PRs get reviewed sooner.
 
+CI runs the checks and unit tests on Python 3.12 and 3.14, and checks the title. It
+never runs real evals, so a PR that changes how runs work should say how you tried it.
+
 ## Adding things
 
 The README describes the format of each piece: a [library](README.md#libraries), a

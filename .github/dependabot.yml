@@ -1,0 +1,16 @@
+# Weekly update PRs for the pinned actions and for the uv lockfile. The prefix keeps
+# their titles valid for the PR title check.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore"
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore"
