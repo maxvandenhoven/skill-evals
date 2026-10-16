@@ -1,0 +1,22 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: >-
+        What you did, what you expected, and what happened instead.
+        Include the command and any error output.
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: >-
+        The skill-evals version (`pip show skill-evals`), `sbx version`, and your OS.
+      render: text
+    validations:
+      required: true

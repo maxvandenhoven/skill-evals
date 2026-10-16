@@ -269,7 +269,7 @@ supports some agents leaves out the folders for the others. For skills that live
 your own repository, a kit can copy them directly into the agent's skills folder:
 
 ```
-libraries/my-skills/claude/sbxenv.yaml                       agent: claude, kits: [./kit]
+libraries/my-skills/claude/sbxenv.yaml                       kits: [./kit]
 libraries/my-skills/claude/kit/spec.yaml                     A kit without setup steps
 libraries/my-skills/claude/kit/files/home/.claude/skills/my-skill/SKILL.md
 ```
