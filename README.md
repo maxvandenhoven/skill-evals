@@ -451,3 +451,9 @@ yours, whose evals, libraries, fixtures and scorers are specific to it and are n
 shipped. The `.skill-evals.yaml` in the root of the repository connects the two
 parts. It uses the package's harnesses directly, so that the example's runs test
 exactly the harnesses that `init` copies.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+
+## License
+
+[MIT](LICENSE)
