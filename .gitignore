@@ -3,3 +3,4 @@
 .runs/
 .mlflow-server.log
 __pycache__/
+.coverage

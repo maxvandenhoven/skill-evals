@@ -37,6 +37,22 @@ runs the same checks on every commit.
 make check
 ```
 
+Also run the unit tests. They take seconds and need no `sbx`, network or model
+credentials. `make test` adds a coverage report, and `uv run pytest` runs them alone:
+
+```bash
+make test
+uv run pytest tests/test_config.py -k discover
+```
+
+Some tests read real agent traces from `tests/data/`. After an agent upgrade, record a
+new trace from a run folder. The script scrubs paths, e-mail addresses and credentials,
+but check the file before you commit it:
+
+```bash
+make record-trace RUN=.runs/<stamp>/<cell>-<case>-<i>
+```
+
 If your change affects how runs work, also try one cell for real, for example with the
 command below, and mention it in the pull request. This needs `sbx` and uses model
 credits, so you can skip it for docs or small fixes.
