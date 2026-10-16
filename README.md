@@ -452,9 +452,7 @@ shipped. The `.skill-evals.yaml` in the root of the repository connects the two
 parts. It uses the package's harnesses directly, so that the example's runs test
 exactly the harnesses that `init` copies.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute and
-[SECURITY.md](SECURITY.md) for reporting vulnerabilities. Please follow the
-[Code of Conduct](CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
 
 ## License
 
