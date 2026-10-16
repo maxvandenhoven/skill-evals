@@ -1,5 +1,5 @@
-# Pre-commit hooks: the same checks as `make check` on the files in a commit, and
-# commitizen's check of the commit message. Install both with `make install-pre-commit`.
+# Pre-commit hooks: the same checks as `make check` on the files in a commit. Install
+# them with `make install-pre-commit`.
 # The hooks run the tool versions from uv.lock through `uv run`, so they match `make`.
 repos:
   - repo: local
@@ -25,8 +25,3 @@ repos:
         entry: uv run yamllint --strict
         language: system
         types: [yaml]
-      - id: commitizen
-        name: commit message (commitizen)
-        entry: uv run cz check --allow-abort --commit-msg-file
-        language: system
-        stages: [commit-msg]

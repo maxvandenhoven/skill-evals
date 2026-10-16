@@ -12,11 +12,9 @@ PARALLEL ?= 1
 sync:
 	@uv sync --all-groups
 
-# Install the git hooks: the checks below on every commit, and commitizen's check of
-# the commit message.
+# Install the git hook that runs the checks below on every commit.
 install-pre-commit:
 	@uv run pre-commit install
-	@uv run pre-commit install --hook-type commit-msg
 
 pre-commit:
 	@uv run pre-commit run --all-files

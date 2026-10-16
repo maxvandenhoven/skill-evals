@@ -106,8 +106,8 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-# Commit messages follow Conventional Commits (feat:, fix:, docs:, ...), checked by
-# the commit-msg hook in .pre-commit-config.yaml. `cz commit` helps write one.
+# Pull request titles follow Conventional Commits (feat:, fix:, docs:, ...), and squash
+# merges make them the commit messages. `cz bump` reads them to pick the next version.
 [tool.commitizen]
 name = "cz_conventional_commits"
 version_provider = "uv"
