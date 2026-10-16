@@ -16,10 +16,11 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Testing",
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "jsonschema>=4.26.0",  # Validates project files against the packaged schemas
     "mlflow>=3.17",  # Tracking server, trace search and mlflow.genai.evaluate
@@ -43,6 +44,9 @@ dev = [
     "types-jsonschema>=4.26.0.20261006",
     "yamllint>=1.38.0",
 ]
+
+[tool.ty.environment]
+python-version = "3.12"  # The oldest supported version
 
 [tool.ty.src]
 include = [
