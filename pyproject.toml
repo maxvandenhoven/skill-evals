@@ -4,7 +4,7 @@
 # project in example/ isn't part of the package.
 [project]
 name = "skill-evals"
-version = "0.1.0"
+version = "0.1.1"
 description = "Evaluate how coding-agent harnesses load and follow skills, in Docker sandboxes, traced with MLflow."
 authors = [
     { name = "Max van den Hoven", email = "max.hoven@gmail.com" },
