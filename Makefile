@@ -1,7 +1,7 @@
 # Common commands. The eval pipeline itself is described in README.md.
 
 .PHONY: sync install-pre-commit pre-commit format lint type check test record-trace \
-	mlflow claude-login evals score
+	release-prepare mlflow claude-login evals score
 
 # Eval selection for `make evals`, overridable: `make evals EVALS=pr N=10`.
 EVALS ?= pr,code-review
@@ -41,6 +41,11 @@ test:
 # upgrade: `make record-trace RUN=.runs/<stamp>/<cell>-<case>-<i>` (optional NAME=).
 record-trace:
 	uv run python tests/record_trace.py $(RUN) $(if $(NAME),--name $(NAME))
+
+# Start a release: branch release/vX.Y.Z with the version bumped and the changelog
+# updated, ready to edit and commit. Optional: `make release-prepare VERSION=0.2.0`.
+release-prepare:
+	@scripts/release-prepare.sh $(VERSION)
 
 # Open the MLflow UI on this project's store. Not needed for runs: run, score and
 # evaluate start a server for their duration if none is up.
