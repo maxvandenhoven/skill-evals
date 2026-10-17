@@ -275,3 +275,38 @@ def test_run_baselines_only(planned: list[tuple[str, str, int]]) -> None:
     """Check that --libraries none runs only baselines and skips evals without one."""
     run.main(run_args(libraries="none", cases="two"))
     assert planned == [("e1-claude-none", "two", 1), ("e1-codex-none", "two", 1)]
+
+
+@pytest.mark.parametrize(
+    ("option", "value", "message"),
+    [
+        ("libraries", "nope", "no library 'nope'; available: a, b, none"),
+        ("cases", "nope", "no case 'nope'; available: one, two"),
+        ("libraries", "none,nope", "no library 'nope'"),
+    ],
+)
+def test_run_rejects_unknown_library_or_case(
+    planned: list[tuple[str, str, int]], option: str, value: str, message: str
+) -> None:
+    """Check that a library or case that no selected eval has stops before any run."""
+    with pytest.raises(SystemExit, match=message):
+        run.main(run_args(**{option: value}))
+    assert planned == []
+
+
+def test_run_rejects_a_selection_without_cells(
+    planned: list[tuple[str, str, int]],
+) -> None:
+    """Check that a library without a layer for the harness leaves nothing to run."""
+    with pytest.raises(SystemExit, match="nothing to run"):
+        run.main(run_args(evals="e1", harnesses="codex", libraries="b"))
+    assert planned == []
+
+
+def test_run_rejects_baseline_of_eval_without_one(
+    planned: list[tuple[str, str, int]],
+) -> None:
+    """Check that `--libraries none` stops if no selected eval has a baseline."""
+    with pytest.raises(SystemExit, match="no library 'none'; available: a"):
+        run.main(run_args(evals="e2", libraries="none"))
+    assert planned == []
