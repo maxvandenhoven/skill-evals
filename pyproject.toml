@@ -147,4 +147,5 @@ convention = "google"
 [tool.commitizen]
 name = "cz_conventional_commits"
 version_provider = "uv"
+template = ".commitizen/CHANGELOG.md.j2"  # Capitalises each entry
 tag_format = "v$version"

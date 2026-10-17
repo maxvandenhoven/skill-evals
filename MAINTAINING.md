@@ -13,7 +13,7 @@ make release-prepare                  # Or: make release-prepare VERSION=0.2.0
 This creates the branch `release/vX.Y.Z` from an up-to-date `main`. The version that
 commitizen picks from the conventional commits since the last tag is written to
 `pyproject.toml` and `uv.lock`, and `CHANGELOG.md` is updated. Nothing is committed or
-tagged. Edit the changelog by hand, commit, and open a pull request titled
+tagged. Entries start with a capital letter (`.commitizen/CHANGELOG.md.j2`). Edit the changelog by hand, commit, and open a pull request titled
 `chore: release vX.Y.Z`. The first release has no tag to bump from, so only the
 changelog is written and the version stays as it is in `pyproject.toml`.
 
