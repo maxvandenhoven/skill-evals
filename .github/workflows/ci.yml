@@ -29,6 +29,9 @@ jobs:
       - run: uv run ty check
       - run: uv run yamllint --strict .
       - run: uv run skill-evals validate
+      - name: Check the release (release pull requests only)
+        if: startsWith(github.head_ref, 'release/')
+        run: scripts/check-release.sh
 
   test:
     name: test (${{ matrix.python-version }})
