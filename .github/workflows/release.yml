@@ -16,8 +16,10 @@ on:
 permissions:
   contents: read
 
+# Separate groups, so a TestPyPI rehearsal doesn't queue behind a release that is
+# waiting for approval.
 concurrency:
-  group: release
+  group: release-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:
