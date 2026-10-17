@@ -1,31 +1,30 @@
-# Publishes a release when a push to main carries a version that has no tag yet:
-# build, smoke-test the wheel, publish to PyPI (trusted publishing, after the
+# Publishes a release when a push to main carries a version that has no tag yet and
+# came from a release pull request that the Prepare release workflow opened. Any other
+# commit, including a pull request that only changes the version, publishes nothing.
+# Build, smoke-test the wheel, publish to PyPI (trusted publishing, after the
 # maintainer approves the `pypi` environment), then tag and create the GitHub release
-# with that version's CHANGELOG.md section. Prepare the version with
-# `make release-prepare` (see MAINTAINING.md). Never runs on pull_request events.
-#
-# Manual run (workflow_dispatch): rehearse on TestPyPI with a throwaway `.devN`
-# version. Nothing is tagged or released.
+# with that version's CHANGELOG.md section. Never runs on pull_request events and
+# cannot be started by hand. See MAINTAINING.md.
 name: Release
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-# Separate groups, so a TestPyPI rehearsal doesn't queue behind a release that is
-# waiting for approval.
 concurrency:
-  group: release-${{ github.event_name }}
+  group: release
   cancel-in-progress: false
 
 jobs:
   version:
     name: version
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       release: ${{ steps.version.outputs.release }}
@@ -36,29 +35,31 @@ jobs:
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
       - id: version
         env:
-          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BOT: ${{ vars.RELEASE_BOT_LOGIN }}
         run: |
           version=$(uv version --short)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           release=false
-          if [ "$EVENT" = push ] && ! git rev-parse -q --verify "refs/tags/v$version" \
-            > /dev/null; then
-            release=true
+          if ! git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            if scripts/check-release-origin.sh "$GITHUB_SHA"; then
+              scripts/check-release.sh
+              release=true
+            else
+              echo "::warning::v$version has no tag, but this commit is not from a" \
+                "release pull request, so it is not released."
+            fi
           fi
           echo "release=$release" >> "$GITHUB_OUTPUT"
 
   build:
     name: build
     needs: version
-    if: >-
-      needs.version.outputs.release == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
-      - name: Make a throwaway version for the TestPyPI rehearsal
-        if: github.event_name == 'workflow_dispatch'
-        run: uv version "$(uv version --short).dev${{ github.run_number }}"
       - run: uv build
       - name: Smoke test the wheel in a clean environment, on the oldest Python
         run: |
@@ -75,7 +76,6 @@ jobs:
   publish-pypi:
     name: publish to PyPI
     needs: [version, build]
-    if: github.event_name == 'push' && needs.version.outputs.release == 'true'
     runs-on: ubuntu-24.04
     environment:
       name: pypi
@@ -91,28 +91,6 @@ jobs:
         with:
           enable-cache: false  # No checkout here, so there are no files to key a cache on
       - run: uv publish --trusted-publishing always
-
-  publish-testpypi:
-    name: publish to TestPyPI
-    needs: build
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/project/skill-evals/
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
-        with:
-          name: dist
-          path: dist/
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
-        with:
-          enable-cache: false  # No checkout here, so there are no files to key a cache on
-      - run: >-
-          uv publish --trusted-publishing always
-          --publish-url https://test.pypi.org/legacy/
 
   github-release:
     name: GitHub release
@@ -130,7 +108,7 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          awk -v v="v$VERSION" '/^## /{p=($2==v)} p' CHANGELOG.md | tail -n +2 > notes.md
+          scripts/changelog-section.sh "$VERSION" > notes.md
           test -s notes.md || { echo "No v$VERSION section in CHANGELOG.md" >&2; exit 1; }
       - name: Create the tag and release
         env:

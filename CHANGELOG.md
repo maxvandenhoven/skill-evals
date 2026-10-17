@@ -1,6 +1,6 @@
 ## v0.1.1 (2026-10-17)
 
-### Fix
+### Fixes
 
 - Complete the PyPI page: README, links, keywords; silence the cache warning (#13)
 
