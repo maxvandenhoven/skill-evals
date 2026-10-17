@@ -1,3 +1,9 @@
+## v0.1.2 (2026-10-17)
+
+### Fixes
+
+- Reject unknown library and case names in run (#17)
+
 ## v0.1.1 (2026-10-17)
 
 ### Fixes
