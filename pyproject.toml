@@ -148,4 +148,7 @@ convention = "google"
 name = "cz_conventional_commits"
 version_provider = "uv"
 template = ".commitizen/CHANGELOG.md.j2"  # Capitalises each entry
+# The changelog's section headers, for the commit types it lists (others stay out).
+change_type_map = { feat = "Features", fix = "Fixes", refactor = "Refactoring", perf = "Performance" }
+change_type_order = ["BREAKING CHANGE", "Features", "Fixes", "Refactoring", "Performance"]
 tag_format = "v$version"
