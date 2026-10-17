@@ -9,6 +9,7 @@ description = "Evaluate how coding-agent harnesses load and follow skills, in Do
 authors = [
     { name = "Max van den Hoven", email = "max.hoven@gmail.com" },
 ]
+readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 classifiers = [

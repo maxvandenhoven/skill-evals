@@ -25,6 +25,15 @@ GitHub release with that version's changelog section.
 To rehearse, run the Release workflow by hand from the Actions tab. It builds a
 throwaway `.devN` version and publishes it to TestPyPI, without tagging anything.
 
+## The README on PyPI
+
+The README is also the PyPI description of each release, and PyPI does not resolve
+relative paths. Link images and files with absolute `https://github.com/...` or
+`https://raw.githubusercontent.com/...` URLs. PyPI drops `<source>` tags, so a
+`<picture>` shows its `<img>`, which is why that one is the light logo. The description
+is fixed per release, so a README change shows on PyPI after the next release. Check
+it with `uv build` and `uvx twine check dist/*`.
+
 ## Settings the workflows rely on
 
 - Environment `pypi`: you as required reviewer, with "prevent self-review" off.
