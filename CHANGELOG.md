@@ -8,7 +8,7 @@
 
 First release.
 
-### Feat
+### Features
 
 - Test whether coding agents load and follow your skills, in Docker Sandboxes, with
   every run traced in MLflow: `skill-evals init`, `run`, `score`, `evaluate`,
@@ -19,7 +19,7 @@ First release.
 - Built-in scorers `skill_invoked`, `skills_used` and `answer_matches`, and support for
   your own scorers.
 
-### Fix
+### Fixes
 
 - Show messages instead of tracebacks for unknown eval and harness names, missing
   files, invalid YAML and scorer folders that are not packages (#11)

@@ -1,0 +1,20 @@
+{#- commitizen's default changelog template, except that each entry starts with a capital letter. Conventional commit titles are lowercase. -#}
+{% for entry in tree %}
+
+## {{ entry.version }}{% if entry.date %} ({{ entry.date }}){% endif %}
+
+{% for change_key, changes in entry.changes.items() %}
+
+{% if change_key %}
+### {{ change_key }}
+{% endif %}
+
+{% for change in changes %}
+{% if change.scope %}
+- **{{ change.scope }}**: {{ change.message[:1] | upper }}{{ change.message[1:] }}
+{% elif change.message %}
+- {{ change.message[:1] | upper }}{{ change.message[1:] }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
