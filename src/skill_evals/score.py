@@ -39,6 +39,7 @@ from skill_evals.config import (
     eval_cases,
     load_eval,
     project,
+    select_names,
 )
 
 Results = dict[str, list[Any]]  # Scorer name -> one value per trace
@@ -151,7 +152,7 @@ def run_traces(experiment: Experiment, stamp: str | None) -> pd.DataFrame:
     run_dirs = traces["tags"].map(lambda t: (t or {}).get("eval.run_dir", ""))
     keep = run_dirs != ""
     if stamp:
-        keep &= run_dirs.str.contains(f"/{stamp}/", regex=False)
+        keep &= run_dirs.map(lambda d: stamp in Path(d).parts)
     return traces[keep]
 
 
@@ -304,7 +305,7 @@ def main(args: argparse.Namespace) -> int:
         The exit code: 1 if a threshold was missed, else 0.
     """
     stamp = resolve_stamp(args.stamp) if args.stamp else None
-    evals = args.evals.split(",") if args.evals else list(discover_evals())
+    evals = select_names("eval", args.evals, discover_evals())
     mlflow.set_tracking_uri(MLFLOW_URI)
     rows: list[Row] = []
     for eval_name in evals:

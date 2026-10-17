@@ -20,7 +20,7 @@ validated against the schemas shipped with this package.
 import importlib.util
 import json
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -236,10 +236,17 @@ def load_yaml(path: Path, schema: str) -> dict[str, Any]:
         The parsed, valid content.
 
     Raises:
-        SystemExit: If the file doesn't match the schema; the message names the
-            file and the offending field.
+        SystemExit: If the file is missing, isn't valid YAML or doesn't match the
+            schema; the message names the file and, for a schema error, the field.
     """
-    data = yaml.safe_load(path.read_text())
+    try:
+        data = yaml.safe_load(path.read_text())
+    except FileNotFoundError as e:
+        msg = f"{path}: no such file"
+        raise SystemExit(msg) from e
+    except yaml.YAMLError as e:
+        msg = f"{path}: invalid YAML: {e}"
+        raise SystemExit(msg) from e
     try:
         jsonschema.validate(data, _schema(schema))
     except jsonschema.ValidationError as e:
@@ -393,6 +400,30 @@ def eval_libraries(name: str) -> list[str]:
     return baseline + spec["libraries"]
 
 
+def select_names(kind: str, option: str | None, available: Iterable[str]) -> list[str]:
+    """Resolve a comma-separated option such as --evals against what exists.
+
+    Args:
+        kind: What the names are, for the error message, e.g. "eval".
+        option: The option's value, or None for everything.
+        available: The names that exist.
+
+    Returns:
+        The names asked for, in the order given; all available names for None.
+
+    Raises:
+        SystemExit: If a name doesn't exist; the message lists the available ones.
+    """
+    names = list(available)
+    if option is None:
+        return names
+    wanted = option.split(",")
+    if unknown := [name for name in wanted if name not in names]:
+        msg = f"no {kind} {', '.join(map(repr, unknown))}; available: {', '.join(names)}"
+        raise SystemExit(msg)
+    return wanted
+
+
 def load_harness(name: str) -> dict[str, Any]:
     """Read and validate <harnesses>/<name>/harness.yaml.
 
@@ -415,6 +446,7 @@ def _project_scorers() -> ModuleType | None:
         The package, or None if the project has no `scorers` folder.
 
     Raises:
+        SystemExit: If the folder has no __init__.py.
         ImportError: If its __init__.py can't be loaded.
     """
     folder = project().scorers
@@ -424,6 +456,9 @@ def _project_scorers() -> ModuleType | None:
     if name in sys.modules:
         return sys.modules[name]
     init = folder / "__init__.py"
+    if not init.is_file():
+        msg = f"{init}: no such file; `scorers` must be a Python package"
+        raise SystemExit(msg)
     spec = importlib.util.spec_from_file_location(
         name, init, submodule_search_locations=[str(folder)]
     )

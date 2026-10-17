@@ -52,6 +52,7 @@ from skill_evals.config import (
     library_layer,
     load_harness,
     project,
+    select_names,
 )
 
 
@@ -364,7 +365,8 @@ def write_report(stamp: str, started: dt.datetime, rows: list[Row]) -> Path:
         "| cell | case | # | exit | trace | note |",
         "|---|---|---|---|---|---|",
         *(
-            f"| {r['cell']} | {r['case']} | {r['repeat']} | {r['exit']} "
+            f"| {r['cell']} | {r['case']} | {r['repeat']} "
+            f"| {'' if r['exit'] is None else r['exit']} "
             f"| {r['trace'] or ''} | {r['note']} |"
             for r in rows
         ),
@@ -422,10 +424,8 @@ def main(args: argparse.Namespace) -> str:
     Returns:
         The invocation's stamp, naming its run folder.
     """
-    evals = args.evals.split(",") if args.evals else list(discover_evals())
-    harnesses = (
-        args.harnesses.split(",") if args.harnesses else list(discover_harnesses())
-    )
+    evals = select_names("eval", args.evals, discover_evals())
+    harnesses = select_names("harness", args.harnesses, discover_harnesses())
     only = set(args.libraries.split(",")) if args.libraries else None
     cells = []
     for e in evals:
