@@ -1,6 +1,8 @@
 <h1 align="center">
-  <img src="https://github.com/maxvandenhoven/skill-evals/blob/main/images/logo-light.svg?raw=true#gh-light-mode-only" width="300">
-  <img src="https://github.com/maxvandenhoven/skill-evals/blob/main/images/logo-dark.svg?raw=true#gh-dark-mode-only" width="300">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/logo-dark.svg">
+    <img src="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/logo-light.svg" alt="skill-evals" width="300">
+  </picture>
 </h1>
 
 `skill-evals` tests whether coding agents load your skills and follow them.
@@ -43,7 +45,7 @@ library version that each agent installs; see [Limitations](#limitations).
 
 You need the [sbx CLI](https://docs.docker.com/ai/sandboxes/install/) and
 [uv](https://docs.astral.sh/uv/), and the agents must be logged in (see below). This
-repository is itself a `skill-evals` project: [`example/`](example/) tests Matt
+repository is itself a `skill-evals` project: [`example/`](https://github.com/maxvandenhoven/skill-evals/tree/main/example/) tests Matt
 Pocock's skills with two evals. You can run it as follows:
 
 ```bash
@@ -122,7 +124,7 @@ tests/skills/
 All of these files are yours to edit, and `skill-evals` only reads them. Add
 `.skill-evals/`, which holds the run folders and the MLflow store, to your
 `.gitignore`. Then add a library with your skills, a fixture and an eval, as
-described in [Concepts](#concepts). The [`example/`](example/) folder in this
+described in [Concepts](#concepts). The [`example/`](https://github.com/maxvandenhoven/skill-evals/tree/main/example/) folder in this
 repository contains one of each, as well as a custom scorer.
 
 ### Writing files with the schemas
@@ -363,7 +365,7 @@ You can add your own scorers by pointing `scorers:` in `.skill-evals.yaml` to a
 Python package whose `__init__.py` defines a `REGISTRY` of
 [MLflow scorer](https://mlflow.org/docs/latest/genai/concepts/scorers/) factories.
 Read the traces through `skill_evals.traces`, so that the scorer works for every
-agent. The example's [`command_ran`](example/scorers/__init__.py) scorer checks what
+agent. The example's [`command_ran`](https://github.com/maxvandenhoven/skill-evals/blob/main/example/scorers/__init__.py) scorer checks what
 the agent did, rather than what it answered:
 
 ```python
@@ -446,14 +448,14 @@ make evals                           # The reference run of this repository's ev
 
 The repository has two parts. `src/skill_evals/` is the package. It contains the CLI,
 the built-in scorers and trace readers, and the files that ship for reuse as they
-are, namely `harnesses/` and `schemas/`. [`example/`](example/) is a project like
+are, namely `harnesses/` and `schemas/`. [`example/`](https://github.com/maxvandenhoven/skill-evals/tree/main/example/) is a project like
 yours, whose evals, libraries, fixtures and scorers are specific to it and are not
 shipped. The `.skill-evals.yaml` in the root of the repository connects the two
 parts. It uses the package's harnesses directly, so that the example's runs test
 exactly the harnesses that `init` copies.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+See [CONTRIBUTING.md](https://github.com/maxvandenhoven/skill-evals/blob/main/CONTRIBUTING.md) for how to contribute.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/maxvandenhoven/skill-evals/blob/main/LICENSE)
