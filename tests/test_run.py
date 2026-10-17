@@ -166,7 +166,7 @@ def test_write_report(project_dir: ProjectBuilder) -> None:
         "| cell | case | # | exit | trace | note |",
         "|---|---|---|---|---|---|",
         "| pr-claude-none | one | 1 | 0 | tr-1 |  |",
-        "| pr-codex-none | one | 1 | None |  | sandbox create failed |",
+        "| pr-codex-none | one | 1 |  |  | sandbox create failed |",
     ]
 
 

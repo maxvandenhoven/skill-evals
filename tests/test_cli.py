@@ -197,11 +197,6 @@ def test_missing_config_exits_with_message(
     assert "create one with `skill-evals init`" in code
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=KeyError,
-    reason="unknown eval names raise KeyError instead of a message (see report)",
-)
 @pytest.mark.parametrize("command", ["run", "score"])
 def test_unknown_eval_exits_with_message(
     project_dir: ProjectBuilder,
@@ -215,7 +210,21 @@ def test_unknown_eval_exits_with_message(
     config = str(project_dir.config)
     code = run_cli(monkeypatch, "--config", config, command, "--evals", "nope")
     assert isinstance(code, str)
-    assert "nope" in code
+    assert "no eval 'nope'; available: one" in code
+
+
+def test_unknown_harness_exits_with_message(
+    project_dir: ProjectBuilder,
+    monkeypatch: pytest.MonkeyPatch,
+    no_server: list[str],
+) -> None:
+    """Check that an unknown harness name stops with a message, before any sandbox."""
+    project_dir.add_eval("one", VALID_EVAL)
+    project_dir.add_harness("agent")
+    config = str(project_dir.config)
+    code = run_cli(monkeypatch, "--config", config, "run", "--harnesses", "nope")
+    assert isinstance(code, str)
+    assert "no harness 'nope'; available: agent" in code
 
 
 @pytest.mark.parametrize(("result", "code"), [(0, 0), (1, 1), ("20261016-215019", 0)])

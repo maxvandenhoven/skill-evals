@@ -20,6 +20,7 @@ from skill_evals.config import (
     load_harness,
     project,
     scorer_registry,
+    select_names,
     use_config,
 )
 from tests.helpers import ProjectBuilder
@@ -411,3 +412,38 @@ def test_build_scorers_adds_diagnostics(project_dir: ProjectBuilder) -> None:
         ]
     )
     assert [s.name for s in scorers] == ["skill_invoked:pr", "always", "skills_used"]
+
+
+def test_missing_config_file_names_file(tmp_path: Path) -> None:
+    """Check that a --config path that doesn't exist stops with a message."""
+    use_config(tmp_path / "nope.yaml")
+    with pytest.raises(SystemExit, match=r"nope\.yaml: no such file"):
+        project()
+
+
+def test_invalid_yaml_names_file(project_dir: ProjectBuilder) -> None:
+    """Check that a YAML syntax error stops with the file, not a traceback."""
+    project_dir.add_eval("broken", "libraries: [\n")
+    with pytest.raises(SystemExit, match=r"broken\.yaml: invalid YAML: "):
+        load_eval("broken")
+
+
+def test_scorers_folder_without_init(project_dir: ProjectBuilder) -> None:
+    """Check that a scorers folder that isn't a package stops with a message."""
+    project_dir.add_scorers("")
+    (project_dir.root / "scorers" / "__init__.py").unlink()
+    with pytest.raises(SystemExit, match=r"__init__\.py: no such file; `scorers`"):
+        scorer_registry()
+
+
+def test_select_names() -> None:
+    """Check that an option picks names in the order given, and None picks all."""
+    assert select_names("eval", None, ["a", "b", "c"]) == ["a", "b", "c"]
+    assert select_names("eval", "c,a", ["a", "b", "c"]) == ["c", "a"]
+
+
+def test_select_names_unknown() -> None:
+    """Check that unknown names are all reported, with the available ones."""
+    with pytest.raises(SystemExit) as exc:
+        select_names("harness", "a,x,y", ["a", "b"])
+    assert str(exc.value) == "no harness 'x', 'y'; available: a, b"
