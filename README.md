@@ -13,7 +13,7 @@
 - **Composable evaluations.** Define reusable components in YAML and combine built-in checks with custom Python scorers.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/architecture.jpeg" alt="Agents run in isolated sandboxes, send traces to MLflow, and have those traces graded by scorers" width="600">
+  <img src="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/architecture.svg" alt="Agents run in isolated sandboxes, send traces to MLflow, and have those traces graded by scorers" width="600">
 </p>
 
 ## Background
