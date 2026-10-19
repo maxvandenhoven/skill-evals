@@ -1,0 +1,119 @@
+# Publishes a release when a push to main carries a version that has no tag yet and
+# came from a release pull request that the Prepare release workflow opened. Any other
+# commit, including a pull request that only changes the version, publishes nothing.
+# Build, smoke-test the wheel, publish to PyPI (trusted publishing, after the
+# maintainer approves the `pypi` environment), then tag and create the GitHub release
+# with that version's CHANGELOG.md section. Never runs on pull_request events and
+# cannot be started by hand. See MAINTAINING.md.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: version
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+      - id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_BOT: ${{ vars.RELEASE_BOT_LOGIN }}
+        run: |
+          version=$(uv version --short)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          release=false
+          if ! git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+            if scripts/check-release-origin.sh "$GITHUB_SHA"; then
+              scripts/check-release.sh
+              release=true
+            else
+              echo "::warning::v$version has no tag, but this commit is not from a" \
+                "release pull request, so it is not released."
+            fi
+          fi
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: build
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+      - run: uv build
+      - name: Smoke test the wheel in a clean environment, on the oldest Python
+        run: |
+          wheel="$PWD/$(ls dist/*.whl)"
+          cd "$(mktemp -d)"
+          uvx --python 3.12 --from "$wheel" skill-evals --help
+          uvx --python 3.12 --from "$wheel" skill-evals init skill-evals
+          uvx --python 3.12 --from "$wheel" skill-evals validate
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: dist
+          path: dist/
+
+  publish-pypi:
+    name: publish to PyPI
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/skill-evals/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          enable-cache: false  # No checkout here, so there are no files to key a cache on
+      - run: uv publish --trusted-publishing always
+
+  github-release:
+    name: GitHub release
+    needs: [version, publish-pypi]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - name: Take this version's section of the changelog as the release notes
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          scripts/changelog-section.sh "$VERSION" > notes.md
+          test -s notes.md || { echo "No v$VERSION section in CHANGELOG.md" >&2; exit 1; }
+      - name: Create the tag and release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: >-
+          gh release create "v$VERSION" dist/*
+          --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md

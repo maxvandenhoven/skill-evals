@@ -89,3 +89,10 @@ line. The maintainer can fix a title when merging. Smaller PRs get reviewed soon
 
 CI runs the checks and unit tests on Python 3.12 and 3.14, and checks the title. It
 never runs real evals, so a PR that changes how runs work should say how you tried it.
+
+## Adding things
+
+The README describes the format of each piece: a [library](README.md#libraries), a
+[fixture](README.md#fixtures), an [eval](README.md#evals), a
+[scorer](README.md#scorers) and a [harness](README.md#harnesses). A harness for
+another agent also needs a tracing kit and a trace reader in `src/skill_evals/traces/`.

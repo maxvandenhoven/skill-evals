@@ -1,0 +1,49 @@
+# Checks on every pull request and on main. Nothing here runs real evals (those need
+# sbx, Docker and model credentials) and no job uses secrets.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked --all-groups
+      - run: uv run ruff format --check
+      - run: uv run ruff check --output-format concise
+      - run: uv run ty check
+      - run: uv run yamllint --strict .
+      - run: uv run skill-evals validate
+      - name: Check the release (release pull requests only)
+        if: startsWith(github.head_ref, 'release/')
+        run: scripts/check-release.sh
+
+  test:
+    name: test (${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked --all-groups
+      - run: uv run pytest --cov=skill_evals --cov-report=term-missing

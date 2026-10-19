@@ -4,12 +4,34 @@
 # project in example/ isn't part of the package.
 [project]
 name = "skill-evals"
-version = "0.1.0"
+version = "0.1.2"
 description = "Evaluate how coding-agent harnesses load and follow skills, in Docker sandboxes, traced with MLflow."
 authors = [
     { name = "Max van den Hoven", email = "max.hoven@gmail.com" },
 ]
-requires-python = ">=3.13"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = [
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "docker-sandboxes",
+    "evals",
+    "mlflow",
+    "testing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Testing",
+]
+requires-python = ">=3.12"
 dependencies = [
     "jsonschema>=4.26.0",  # Validates project files against the packaged schemas
     "mlflow>=3.17",  # Tracking server, trace search and mlflow.genai.evaluate
@@ -17,27 +39,50 @@ dependencies = [
     "pyyaml>=6",  # Reads project files
 ]
 
+[project.urls]
+Homepage = "https://github.com/maxvandenhoven/skill-evals"
+Source = "https://github.com/maxvandenhoven/skill-evals"
+Changelog = "https://github.com/maxvandenhoven/skill-evals/blob/main/CHANGELOG.md"
+Releases = "https://github.com/maxvandenhoven/skill-evals/releases"
+Issues = "https://github.com/maxvandenhoven/skill-evals/issues"
+
 [project.scripts]
 skill-evals = "skill_evals.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.11.2,<0.12.0"]
+requires = ["uv_build>=0.11.2,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "commitizen>=4.19.2",
     "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
     "ty>=0.0.86",
     "types-jsonschema>=4.26.0.20261006",
     "yamllint>=1.38.0",
 ]
 
+# Unit tests: no sbx, Docker, network, model credentials or MLflow server. Run them
+# with `make test`, which adds a coverage report.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not integration'"
+strict_markers = true
+markers = [
+    "integration: needs sbx and Docker login, no model credentials; not run by default",
+]
+
+[tool.ty.environment]
+python-version = "3.12"  # The oldest supported version
+
 [tool.ty.src]
 include = [
     "src/**",
     "example/scorers/**",
+    "tests/**",
 ]
 # Fixture files are test material for the agents (e.g. deliberately without docstrings).
 exclude = [
@@ -89,6 +134,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Command-line code: printing is its output, not leftover debugging.
 "src/skill_evals/{cli,run,score,init,mlflow_server}.py" = ["T201"]
+"tests/record_trace.py" = ["T201"]
 "src/skill_evals/harnesses/codex/tracing/files/home/.mlflow-codex/setup_tracing.py" = [
     "T201",
 ]
@@ -96,9 +142,13 @@ ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-# Commit messages follow Conventional Commits (feat:, fix:, docs:, ...), checked by
-# the commit-msg hook in .pre-commit-config.yaml. `cz commit` helps write one.
+# Pull request titles follow Conventional Commits (feat:, fix:, docs:, ...), and squash
+# merges make them the commit messages. `cz bump` reads them to pick the next version.
 [tool.commitizen]
 name = "cz_conventional_commits"
 version_provider = "uv"
+template = ".commitizen/CHANGELOG.md.j2"  # Capitalises each entry
+# The changelog's section headers, for the commit types it lists (others stay out).
+change_type_map = { feat = "Features", fix = "Fixes", refactor = "Refactoring", perf = "Performance" }
+change_type_order = ["BREAKING CHANGE", "Features", "Fixes", "Refactoring", "Performance"]
 tag_format = "v$version"

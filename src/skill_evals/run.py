@@ -52,6 +52,7 @@ from skill_evals.config import (
     library_layer,
     load_harness,
     project,
+    select_names,
 )
 
 
@@ -364,7 +365,8 @@ def write_report(stamp: str, started: dt.datetime, rows: list[Row]) -> Path:
         "| cell | case | # | exit | trace | note |",
         "|---|---|---|---|---|---|",
         *(
-            f"| {r['cell']} | {r['case']} | {r['repeat']} | {r['exit']} "
+            f"| {r['cell']} | {r['case']} | {r['repeat']} "
+            f"| {'' if r['exit'] is None else r['exit']} "
             f"| {r['trace'] or ''} | {r['note']} |"
             for r in rows
         ),
@@ -421,27 +423,34 @@ def main(args: argparse.Namespace) -> str:
 
     Returns:
         The invocation's stamp, naming its run folder.
+
+    Raises:
+        SystemExit: If a name in an option doesn't exist, or the selection leaves
+            nothing to run.
     """
-    evals = args.evals.split(",") if args.evals else list(discover_evals())
-    harnesses = (
-        args.harnesses.split(",") if args.harnesses else list(discover_harnesses())
-    )
-    only = set(args.libraries.split(",")) if args.libraries else None
+    evals = select_names("eval", args.evals, discover_evals())
+    harnesses = select_names("harness", args.harnesses, discover_harnesses())
+    known_libraries = {lib for e in evals for lib in eval_libraries(e)}
+    only = set(select_names("library", args.libraries, sorted(known_libraries)))
+    known_cases = {c.id for e in evals for c in eval_cases(e)}
+    wanted = set(select_names("case", args.cases, sorted(known_cases)))
     cells = []
     for e in evals:
-        libraries = [lib for lib in eval_libraries(e) if only is None or lib in only]
+        libraries = [lib for lib in eval_libraries(e) if lib in only]
         for h in harnesses:
             for lib in libraries:
                 if lib != "none" and not library_layer(lib, h):
                     print(f"skip {e}/{h}/{lib}: library has no layer for this harness")
                     continue
                 cells.append(Cell(e, h, lib))
+    if not cells:
+        msg = "nothing to run: no selected eval, harness and library make a cell"
+        raise SystemExit(msg)
 
     started = dt.datetime.now()
     stamp = started.strftime("%Y%m%d-%H%M%S")
-    wanted = set(args.cases.split(",")) if args.cases else None
     cases = {
-        e: [c for c in eval_cases(e) if wanted is None or c.id in wanted]
+        e: [c for c in eval_cases(e) if c.id in wanted]
         for e in {cell.eval for cell in cells}
     }
     total = sum(len(cases[cell.eval]) for cell in cells) * args.repeats

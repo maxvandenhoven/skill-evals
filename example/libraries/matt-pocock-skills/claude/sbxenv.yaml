@@ -4,6 +4,5 @@
 # lists concatenate across layers, so the tracing kit stays.
 # A run without this layer is the "none" (baseline) library.
 schemaVersion: "1"
-agent: claude
 kits:
   - ./kit
