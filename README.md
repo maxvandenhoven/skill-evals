@@ -1,4 +1,6 @@
+<p align="center">
 <img src="assets/logo.png" width="160" alt="skill-evals logo">
+</p>
 
 # skill-evals
 
