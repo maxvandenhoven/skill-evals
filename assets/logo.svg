@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">skill-evals logo</title>
+<desc id="desc">A paper-filled rounded hexagonal project mark with flat print inks.</desc>
+<path d="M136 20L216 66Q224 70 224 80V176Q224 186 216 190L136 236Q128 240 120 236L40 190Q32 186 32 176V80Q32 70 40 66L120 20Q128 16 136 20Z" fill="#F8F6F1" stroke="#1E1B1A" stroke-width="5"/>
+<g stroke="#1E1B1A" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+<g id="registration" transform="translate(2 -2)">
+<path d="M80 193V58H151L178 85" fill="none" stroke="#FF6C2F" stroke-width="8"/>
+</g>
+<path d="M79 194V57H150L179 86V194Z" fill="#F8F6F1" stroke="#1E1B1A" stroke-width="5"/>
+<path d="M150 58V86H178" fill="#FFB511" stroke="#1E1B1A" stroke-width="5"/>
+<path d="M98 103H145M98 118H133" fill="none" stroke="#1E1B1A" stroke-width="5"/>
+<path d="M101 153L121 173L158 135" fill="none" stroke="#FF6C2F" stroke-width="11"/>
+</g>
+<g id="print-texture" fill="#FF6C2F">
+<circle cx="112" cy="205" r="1.2"/>
+<circle cx="120" cy="205" r="1.5"/>
+<circle cx="128" cy="205" r="1.8"/>
+<circle cx="136" cy="205" r="1.5"/>
+<circle cx="144" cy="205" r="1.2"/>
+</g>
+</svg>
