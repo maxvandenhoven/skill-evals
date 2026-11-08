@@ -1,4 +1,4 @@
-<img src="assets/logo.svg" width="160" alt="skill-evals logo">
+<img src="assets/logo.png" width="160" alt="skill-evals logo">
 
 # skill-evals
 
@@ -10,9 +10,9 @@ The framework ships with Claude Code and Codex harnesses. Library maintainers ca
 
 ## Background
 
-Skills are easy to create and distribute, but establishing how well they perform requires testing. Many libraries ship without evaluations, or test only a narrow set of environments. A skill that works with one model and coding agent may not be selected or followed in another setup.
+Skills are easy to write and share, but many libraries ship without evaluations or test only a narrow set of environments. This project asks whether a skill that works with one model and coding agent is still selected and followed in another. The preferred model or harness for a task changes as models improve, and multi-agent workflows built with tools such as [Omnigent](https://github.com/omnigent-ai/omnigent) may combine several harnesses from the outset.
 
-As models improve, the preferred model or harness for a task can change, and multi-agent workflows built with tools such as [Omnigent](https://github.com/omnigent-ai/omnigent) may combine several harnesses from the outset. Evaluating the same cases across these configurations helps establish where skills work well and where adjustments are needed, without repeating setup and scoring by hand.
+Answering that question by hand means repeating installation, setup, and scoring for every combination. `skill-evals` turns each piece into a reusable definition and runs every case in a fresh sandbox, which isolates the agent run and limits unintended carryover from earlier runs and from the host's agent settings. Traces are captured in MLflow and scored afterward, which makes it possible to check whether the agent actually invoked the skill and followed its instructions rather than relying on the final answer alone. A baseline without the library shows what the installation changes, and the same cases can then be repeated across harnesses.
 
 ## Getting started
 
