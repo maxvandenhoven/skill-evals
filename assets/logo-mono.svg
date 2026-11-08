@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="skill-evals-title skill-evals-desc">
+<title id="skill-evals-title">skill-evals logo</title>
+<desc id="skill-evals-desc">A document with a large check mark and a row of pass and fail discs, printed as a risograph inside a point-up hexagon.</desc>
+<path id="skill-evals-paper" d="M182.56 33.5L223.259 56.998A27.72 27.72 0 0 1 237.119 81.004L237.119 174.996A27.72 27.72 0 0 1 223.259 199.002L141.86 245.998A27.72 27.72 0 0 1 114.14 245.998L32.741 199.002A27.72 27.72 0 0 1 18.881 174.996L18.881 81.004A27.72 27.72 0 0 1 32.741 56.998L114.14 10.002A27.72 27.72 0 0 1 141.86 10.002Z" fill="#F8F6F1"/>
+<g id="skill-evals-motif">
+<path d="M93.86 57.422L150.592 57.422L176.214 83.044L176.214 187.358C176.214 191.401 172.936 194.679 168.893 194.679L93.86 194.679C89.817 194.679 86.54 191.401 86.54 187.358L86.54 64.743C86.54 60.7 89.817 57.422 93.86 57.422Z" fill="#F8F6F1"/>
+<path d="M93.86 57.422L150.592 57.422L176.214 83.044L176.214 187.358C176.214 191.401 172.936 194.679 168.893 194.679L93.86 194.679C89.817 194.679 86.54 191.401 86.54 187.358L86.54 64.743C86.54 60.7 89.817 57.422 93.86 57.422Z" fill="none" stroke="#1E1B1A" stroke-width="11.896" stroke-linejoin="round"/>
+<path d="M103.01 129.711L126.801 154.417L167.063 104.09" fill="none" stroke="#1E1B1A" stroke-width="23.791" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M150.592 57.422L176.214 83.044L157.913 83.044C153.87 83.044 150.592 79.766 150.592 75.723Z" fill="#1E1B1A"/>
+</g>
+</svg>

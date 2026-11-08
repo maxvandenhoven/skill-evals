@@ -1,133 +1,104 @@
-<h1 align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/logo-dark.svg">
-    <img src="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/logo-light.svg" alt="skill-evals" width="300">
-  </picture>
-</h1>
-
-`skill-evals` is an agent skill evaluation framework for testing skills across models, harnesses, and installation methods. It helps library maintainers evaluate skills across user setups using their recommended installation method, and helps individuals and organizations evaluate skills for use across agents, including multi-agent setups built with tools such as [Omnigent](https://github.com/omnigent-ai/omnigent).
-
-- **Multiple models and harnesses.** Run the same cases across agent configurations.
-- **Isolated environments.** Each run starts in a fresh sandbox without inheriting local agent settings or installed skills.
-- **Exact installation method.** Specify the install commands used by you or your users, including harness-specific plugin installers.
-- **Composable evaluations.** Define reusable components in YAML and combine built-in checks with custom Python scorers.
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/maxvandenhoven/skill-evals/main/images/architecture.svg" alt="Agents run in isolated sandboxes, send traces to MLflow, and have those traces graded by scorers" width="600">
+<img src="assets/logo.png" width="160" alt="skill-evals logo">
 </p>
+
+# skill-evals
+
+`skill-evals` evaluates agent skills across models, coding agents, and installation methods. It runs tasks in isolated environments, captures traces, and scores whether an agent selects a skill, follows its instructions, and completes the intended task. Runs without the skill provide a baseline for understanding what changes when it is installed.
+
+The framework ships with Claude Code and Codex harnesses. Library maintainers can test the installation methods their users rely on, while individuals and organizations can compare skills across their own agent setups. Evaluations combine reusable YAML definitions with built-in checks and custom Python scorers.
+
+<img src="images/architecture.svg" width="600" alt="Agents run in isolated sandboxes, send traces to MLflow, and have those traces graded by scorers">
 
 ## Background
 
-Skills are easy to create and distribute, but establishing how well they perform requires testing. Evaluation can show whether an agent discovers a skill, follows its instructions, and completes the intended task. Skill evaluation is not a new concept, but many skill libraries are distributed without it, or with a very narrow set of environments. Library maintainers need broader coverage to understand how their skills perform across the configurations their users rely on.
+Skills are easy to write and share, but many libraries ship without evaluations or test only a narrow set of environments. This project asks whether a skill that works with one model and coding agent is still selected and followed in another. The preferred model or harness for a task changes as models improve, and multi-agent workflows built with tools such as [Omnigent](https://github.com/omnigent-ai/omnigent) may combine several harnesses from the outset.
 
-For individuals and organizations, this is also a question of portability. As models improve, the preferred model or harness for a task can change, while multi-agent workflows may combine several harnesses from the outset. Evaluating the same skills across these configurations helps establish where they work well and where adjustments are needed, without repeating the setup and scoring work by hand.
+Answering that question by hand means repeating installation, setup, and scoring for every combination. `skill-evals` turns each piece into a reusable definition and runs every case in a fresh sandbox, which isolates the agent run and limits unintended carryover from earlier runs and from the host's agent settings. Traces are captured in MLflow and scored afterward, which makes it possible to check whether the agent actually invoked the skill and followed its instructions rather than relying on the final answer alone. A baseline without the library shows what the installation changes, and the same cases can then be repeated across harnesses.
 
-## Example results
+## Getting started
 
-This repository is itself a `skill-evals` project. The [example folder](example/) contains evaluations of Matt Pocock's popular [skill library](https://github.com/mattpocock/skills). The code review case asks an agent to review a feature branch against a spec and coding standards, then checks whether it invoked the library's `code-review` skill and included the expected sections in its answer.
+You need Python 3.12 or newer and [uv](https://docs.astral.sh/uv/). Clone this repository to try the included project before writing your own evaluations.
 
-The case was run three times on Claude Code and Codex, both with and without the skills installed. Each harness used the exact plugin installation commands recommended in the library's README. The table below shows how many runs invoked the skill and how many produced the expected format.
+```bash
+git clone https://github.com/maxvandenhoven/skill-evals.git
+cd skill-evals
+uv run skill-evals validate
+```
 
-| Harness     | Skills installed | Skill invoked | Expected review format |
-| ----------- | ---------------- | ------------- | ---------------------- |
-| Claude Code | No               | 0 of 3        | 0 of 3                 |
-| Claude Code | Yes              | 1 of 3        | 1 of 3                 |
-| Codex       | No               | 0 of 3        | 0 of 3                 |
-| Codex       | Yes              | 3 of 3        | 3 of 3                 |
+Validation checks the evaluation and harness definitions, resolves fixtures, and builds scorers without running agents. For the included project, it prints `valid: 2 eval(s), 2 harness(es)`. It does not verify sandbox creation, agent authentication, or model access.
 
-Without the library, both harnesses fail these checks, as expected. Adding it produces a consistent improvement across the three Codex runs, while Claude Code loads the skill in only one of three runs. Differences in built-in skills could help explain this behavior, since Claude Code includes its own `code-review` skill. Identifying such differences helps maintainers address inconsistent skill selection and provide a more consistent experience across user setups.
+To run agents, install and configure [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/install/), run `sbx login`, and authenticate the agent you want to use through its [agent-specific flow](https://docs.docker.com/ai/sandboxes/agents/). Host agent logins are not a substitute for sandbox authentication.
 
-## Quickstart
+**Evaluations use model credits or subscription allowances.** The command below runs one code review with the library and one without it, using Codex. Review the project’s harness, library, fixture, and scorer definitions before running an unfamiliar project. Sandbox lifecycle commands can execute on the host, and Python scorers run on the host too. Isolation is not a reason to trust arbitrary evaluation code.
 
-The framework requires [uv](https://docs.astral.sh/uv/) and [Docker Sandboxes](https://docs.docker.com/ai/sandboxes/install/) to be installed and configured. Once installed, run `sbx login` and configure the agents you want to use through their specific authentication flows. Docker's [agent guides](https://docs.docker.com/ai/sandboxes/agents/) describe the agent-specific steps in more detail.
+```bash
+uv run skill-evals evaluate --evals code-review --harnesses codex -n 1
+uv run skill-evals mlflow
+```
 
-After authentication, install the framework and initialize a project from your repository's root.
+`evaluate` runs the agents, scores their traces, and saves a Markdown report. In this repository, reports go to `.runs/<stamp>/report.md` and the MLflow store lives in `.mlflow/`. Open `http://127.0.0.1:5000` to inspect traces and assessments after starting the UI. `evaluate` manages an MLflow server for its duration, so you do not need to start the UI first.
+
+### Set up your own project
+
+From the root of a different repository, install the command and initialize its evaluation folders.
 
 ```bash
 uv tool install skill-evals
 skill-evals init tests/skills
 ```
 
-This command generates `.skill-evals.yaml`, copies the harness definitions and editor schemas, and creates empty folders for libraries, fixtures, and evals. You can then add your own definitions using the components described below.
-
-To try the evaluation flow before writing your own cases, clone this repository and run its example project. The commands below validate the configuration, run the code review case three times per configuration, and start the MLflow UI for inspecting the traces.
-
-```bash
-git clone https://github.com/maxvandenhoven/skill-evals.git
-cd skill-evals
-uv run skill-evals validate
-uv run skill-evals evaluate --evals code-review --harnesses claude,codex -n 3
-uv run skill-evals mlflow
-```
-
-Along with printing scores, `evaluate` saves a Markdown report under the project's configured run folder. The default is `.skill-evals/runs/<stamp>/report.md`. This repository overrides the `runs` setting in `.skill-evals.yaml` to use `.runs/`, so its reports appear at `.runs/<stamp>/report.md`.
+This writes `.skill-evals.yaml`, copies the harnesses and editor schemas, and creates empty `libraries`, `fixtures`, and `evals` folders. Add definitions based on the [included examples](example/), then run `skill-evals validate` and `skill-evals evaluate`. Initialization does not create a runnable evaluation. By default, run reports go to `.skill-evals/runs/<stamp>/report.md` and the MLflow store goes to `.skill-evals/mlflow/`, so keep `.skill-evals/` out of version control.
 
 ## How it works
 
-A project combines five reusable components, with `.skill-evals.yaml` pointing to the folders that hold their definitions. These live alongside your skills or tests and can be combined to evaluate different tasks and agent setups.
+A project combines five reusable components, with `.skill-evals.yaml` pointing to the folders that hold their definitions.
 
-- **Harnesses** declare the agent, model, execution command, and tracing setup for MLflow. They are independent of a particular skill library and can be shared across projects.
-- **Libraries** declare how a skill or set of skills is installed for each harness, so the evaluation can use the exact same installation method as your users.
-- **Fixtures** optionally prepare the environment a case needs, e.g., by setting up a repository with a feature branch to review.
-- **Scorers** evaluate agent traces through MLflow, checking skill invocation, answers, or tool use. Custom scorers can also use an LLM-as-a-judge pattern.
+- **Harnesses** declare the agent, model, execution command, and tracing setup for MLflow. They are independent of a skill library and can be shared across projects.
+- **Libraries** declare how skills are installed for each harness, including harness-specific plugin installers, so evaluations can exercise the same installation method as users.
+- **Fixtures** prepare the environment a case needs, such as a repository with a feature branch to review.
+- **Scorers** evaluate traces for skill invocation, answer content, or tool use. Custom Python scorers can also use an LLM-as-a-judge pattern, with any additional model costs that entails.
 - **Evals** define prompts and connect them to libraries, fixtures, and scorers. Together with the selected harnesses and repeat count, they determine the test plan.
 
-For each case and repetition, the framework creates a fresh sandbox for every harness and library combination, installs the skills, prepares the fixture, and runs the prompt. It also runs the case without a library as a baseline by default. The resulting traces go to MLflow, where scorers attach assessments that are collected into the report.
+For each case and repetition, the framework creates a fresh sandbox for every selected harness and library combination, installs the skills, prepares the fixture, and runs the prompt. The shipped base configuration disables the shared skills store, and runs do not inherit host agent settings. Baselines omit the library under test but retain the agent’s built-in skills. They run by default unless an eval sets `baseline: false`.
 
-Although the framework focuses on skills, the same components can be reused for broader agent evaluations. An eval with an empty library list runs without skills while retaining the fixtures, harnesses, and scoring tools.
+Traces go to MLflow, where scorers attach assessments that are collected into the report. The runner also saves agent output, logs, installation inventory, and the workspace for inspection, then removes the sandbox unless `--keep` is set. Treat these outputs as potentially sensitive before sharing them.
 
-## Headless mode and CI
+An eval with `libraries: []` runs only the baseline, retaining fixtures, harnesses, and scoring tools for broader agent evaluations. Use `uv run skill-evals evaluate --help` for selection, repetition, parallelism, and threshold options.
 
-Docker Sandboxes supports [running in CI](https://docs.docker.com/ai/sandboxes/workflows/automation/), so evaluations can run automatically when skills change. Authentication requires a Docker personal access token and agent API keys stored as GitHub Actions secrets, since interactive login flows are not suitable for headless applications.
+## Example results
 
-<details>
-<summary>Example GitHub Actions workflow for evaluating skill changes</summary>
+The [example project](example/) evaluates [Matt Pocock’s skill library](https://github.com/mattpocock/skills). Its [code review case](example/evals/code-review.yaml) asks an agent to review a feature branch against a spec and coding standards, then checks whether it invoked the library’s `code-review` skill and included separate Standards and Spec sections. A custom scorer also checks for a matching `git diff` or `git log` tool call. The [PR case](example/evals/pr.yaml) asks for a pull request body and checks skill invocation and the prescribed template without naming the skill in the prompt.
 
-This example assumes a configured evaluation project and a self-hosted Linux runner with KVM and Docker Sandboxes installed.
+The code review case was previously run three times on Claude Code and Codex, both with and without the library installed. Each harness used the plugin installation commands recommended for it in the library’s README. These are the reported example results, not a benchmark of general review quality.
 
-```yaml
-name: Skill evaluations
+| Harness | Skills installed | Skill invoked | Expected review format |
+| --- | --- | --- | --- |
+| Claude Code | No | 0 of 3 | 0 of 3 |
+| Claude Code | Yes | 1 of 3 | 1 of 3 |
+| Codex | No | 0 of 3 | 0 of 3 |
+| Codex | Yes | 3 of 3 | 3 of 3 |
 
-on:
-  push:
-    branches: [main]
-    paths: ["skills/**"]
-  pull_request:
-    paths: ["skills/**"]
-  workflow_dispatch:
+Without the library, both harnesses fail these library-specific checks, as expected. Adding it improved the scores across the three Codex runs, while Claude Code loaded the skill in only one run. Differences in built-in skills could help explain this behavior, since Claude Code also has a built-in `code-review` skill. The invocation scorer requires a namespace here so that the built-in does not count as the library’s skill.
 
-permissions:
-  contents: read
+Three runs per configuration are not enough to establish a reliable ranking, and matching review headings does not establish that the review is correct. Installation channels can also deliver different library versions. The example kits document this distinction, and each run records the installed inventory. Inspect those versions and the traces before attributing a difference to the model or harness alone.
 
-jobs:
-  evaluate:
-    name: Evaluate skills
-    runs-on: [self-hosted, linux, kvm]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - name: Authenticate Docker and agents
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          printf '%s' "$DOCKER_PAT" | sbx login --username "$DOCKER_USERNAME" --password-stdin
-          sbx secret set anthropic --force --token "$ANTHROPIC_API_KEY"
-          sbx secret set openai --force --token "$OPENAI_API_KEY"
-      - name: Validate evaluations
-        run: uvx skill-evals validate
-      - name: Run evaluations
-        run: uvx skill-evals evaluate -n 5 --min-pass 0.8 --summary "$GITHUB_STEP_SUMMARY"
+To repeat the example comparison with your authenticated agents, run the following command. It makes twelve agent runs and incurs the corresponding usage costs.
+
+```bash
+uv run skill-evals evaluate --evals code-review --harnesses claude,codex -n 3
 ```
-
-</details>
 
 ## Limitations
 
-Evaluations currently begin with a single, non-interactive prompt. Agents can use tools while responding, but cases cannot include follow-up user messages, which limits testing of skills that depend on clarification or iterative feedback. The framework is therefore best suited to automated evaluation. MLflow traces can be reviewed manually, but a human-in-the-loop workflow that pauses for input or collects human scores would require additional setup.
+Evaluations begin with a single, non-interactive prompt. Agents can use tools while responding, but cases cannot include follow-up user messages, which limits testing of skills that depend on clarification or iterative feedback. MLflow traces can be reviewed manually, but a workflow that pauses for human input or collects human scores needs additional setup.
 
-## Contributing and license
+Scores measure the checks you define, not skill quality in general. Baselines help identify what changes when a library is installed, but built-in skills, installation versions, model behavior, and the chosen cases still affect the result.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and checks. Licensed under [MIT](https://github.com/maxvandenhoven/skill-evals/blob/main/LICENSE).
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks, and tests. The unit suite runs with `uv run pytest` and needs no Docker Sandboxes, network access, or model credentials once dependencies are installed. For automated evaluations, see the [headless and CI guide](docs/ci.md), including runner, authentication, and trust requirements.
+
+## License
+
+Licensed under [MIT](LICENSE).
